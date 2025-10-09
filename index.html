@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Poker Payout Calculator</title>
+  <!-- Favicon: green spade icon (SVG for tabs); PNG touch icon will be generated at runtime -->
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" ry="12" fill="%230b1020"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="44" font-family="system-ui,Segoe UI,Roboto,Helvetica,Arial" fill="%2310b981">♠</text></svg>'/>
+  <meta name="theme-color" content="#0b1020" />
+  <!-- Single-file shortcut support (best-effort): iOS/Android home-screen shortcuts look for apple-touch-icon -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --muted: #94a3b8;
+      --text: #e2e8f0;
+      --accent: #22d3ee;
+      --ok: #10b981;
+      --warn: #ef4444;
+      --outline: #1f2937;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background-color: var(--bg); background: radial-gradient(1200px 700px at 80% -10%, #0b122a 0%, var(--bg) 60%);
+      color: var(--text);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .wrap { max-width: 1100px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-weight: 800; margin: 0 0 18px; text-align: center; }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid var(--outline);
+      border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    .toolbar { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--outline); }
+
+    .btn {
+      appearance: none; border: 1px solid var(--outline); background: #0b1020; color: var(--text);
+      padding: 8px 12px; border-radius: 12px; cursor: pointer; font-weight: 600;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease;
+    }
+    .btn:hover { background: #0e1530; }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .status { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+    .dot { width: 12px; height: 12px; border-radius: 999px; display: inline-block; }
+    .ok  { color: var(--ok); }
+    .ok .dot { background: var(--ok); }
+    .warn  { color: var(--warn); }
+    .warn .dot { background: var(--warn); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    thead th { text-align: left; font-size: 14px; color: var(--muted); padding: 8px 10px; background: #0b1020; }
+    tbody td, tfoot th { padding: 6px 10px; border-top: 1px solid var(--outline); }
+    tfoot th { background: #0b1020; font-weight: 800; }
+
+    .name-input, .num-input {
+      width: 100%; padding: 10px 8px; border-radius: 10px; border: 1px solid var(--outline); background: #0c1328; color: var(--text); outline: none;
+    }
+    .num-input { text-align: right; font-variant-numeric: tabular-nums; }
+    .num-input.invalid { border-color: var(--warn); }
+    .payout { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+
+    .controls-cell { padding: 10px; border-top: 1px solid var(--outline); background: #0b1020; }
+    .controls { display: flex; gap: 10px; align-items: center; }
+    .controls .spacer { flex: 1; }
+
+    footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Poker Payout Calculator</h1>
+    <div class="card">
+      <div class="toolbar">
+        <span aria-hidden="true" title="Poker" style="display:inline-flex;align-items:center;gap:8px">
+          <svg width="22" height="22" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
+            <title>Spade</title>
+            <path fill="#10b981" d="M32 6C20 18 8 26 8 36c0 6 5 11 11 11 4 0 8-2 10-5-1 5-3 9-8 12h22c-5-3-7-7-8-12 2 3 6 5 10 5 6 0 11-5 11-11 0-10-12-18-24-30z"/>
+          </svg>
+        </span>
+        <div id="balanceStatus" class="status warn" aria-live="polite">
+          <span class="dot"></span>
+          <span class="status-text">Unbalanced</span>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <form id="calcForm">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>In</th>
+                <th>Out</th>
+                <th>Payout</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+            <tbody>
+              <tr>
+                <td class="controls-cell" colspan="4">
+                  <div class="controls">
+                    <button id="addRowBtn" class="btn" type="button">➕ Add row</button>
+                    <button id="deleteRowBtn" class="btn" type="button">➖ Delete row</button>
+                    <button id="clearBtn" class="btn" type="button">🧹 Clear</button>
+                    <span class="spacer"></span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th>Total</th>
+                <th id="totalIn" class="payout">0.00</th>
+                <th id="totalOut" class="payout">0.00</th>
+                <th id="totalPayout" class="payout">0.00</th>
+              </tr>
+            </tfoot>
+          </table>
+        </form>
+      </div>
+
+      <div class="meta">
+        <span>Type any name and amounts; payouts are computed as <em>Out − In</em>.</span>
+        <span class="cap" id="rowCapNote">0 / 32 rows</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Version 1.1.1
+  </footer>
+
+  <script>
+    (function(){
+      const MAX_ROWS = 32;
+      const STORAGE_KEY = 'poker-payout:v1';
+
+      const rowsTbody = document.getElementById('rows');
+      const addRowBtn = document.getElementById('addRowBtn');
+      const deleteRowBtn = document.getElementById('deleteRowBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const totalInEl = document.getElementById('totalIn');
+      const totalOutEl = document.getElementById('totalOut');
+      const totalPayoutEl = document.getElementById('totalPayout');
+      const statusEl = document.getElementById('balanceStatus');
+      const statusText = statusEl.querySelector('.status-text');
+      const capNote = document.getElementById('rowCapNote');
+
+      function fmt(n){ return (Math.round(n*100)/100).toFixed(2).replace('-0.00','0.00'); }
+      function parseNum(v){
+        if(!v) return 0;
+        let str = String(v).trim();
+        if(str==='') return 0;
+        if(str.includes(',') && str.includes('.')){
+          if(str.lastIndexOf(',')>str.lastIndexOf('.')) str=str.replace(/\./g,'').replace(',', '.');
+          else str=str.replace(/,/g,'');
+        } else if(str.includes(',')) str=str.replace(/\./g,'').replace(',', '.');
+        const num=parseFloat(str.replace(/[^0-9+\-\.]/g,''));
+        return Number.isFinite(num)?num:0;
+      }
+
+      function validateInput(i){
+        const raw=i.value.trim();
+        if(raw===''){i.classList.remove('invalid');return;}
+        const ok=!isNaN(parseNum(raw));
+        i.classList.toggle('invalid',!ok);
+      }
+
+      function createCellWithInput(cls,ph,opts={},def=''){
+        const td=document.createElement('td');
+        const inp=document.createElement('input');
+        inp.type='text';inp.className=cls;inp.placeholder=ph;inp.autocomplete='off';inp.spellcheck=false;
+        if(opts.inputmode) inp.setAttribute('inputmode',opts.inputmode);
+        if(opts.enterkeyhint) inp.setAttribute('enterkeyhint',opts.enterkeyhint);
+        if(opts.pattern) inp.setAttribute('pattern',opts.pattern);
+        if(def!=='') inp.value=def;
+        td.appendChild(inp);return {td,inp};
+      }
+
+      function focusNext(from){
+        const inputs=[...rowsTbody.querySelectorAll('.name-input,.num-input')];
+        const idx=inputs.indexOf(from);
+        if(idx===-1) return; const next=inputs[idx+1];
+        if(next){next.focus();if (next.select) next.select();}
+      }
+
+      function attachFieldHandlers(nameInp, inInp, outInp){
+        const onChange=()=>{ validateInput(inInp); validateInput(outInp); recalc(); save(); };
+        inInp.addEventListener('input', onChange);
+        outInp.addEventListener('input', onChange);
+        for(const el of [nameInp,inInp,outInp]){
+          el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); focusNext(e.currentTarget); } });
+          el.addEventListener('input', save);
+        }
+      }
+
+      function createRow(values){
+        const tr=document.createElement('tr');
+        const nameDef = values?.name ?? '';
+        const inDef   = values?.in ?? '30';
+        const outDef  = values?.out ?? '';
+
+        const nameCell=createCellWithInput('name-input','Player',{inputmode:'text',enterkeyhint:'next'}, nameDef);
+        tr.appendChild(nameCell.td);
+        const inCell=createCellWithInput('num-input','0.00',{inputmode:'decimal',enterkeyhint:'next',pattern:"[0-9.,\- ]*"}, inDef);
+        tr.appendChild(inCell.td);
+        const outCell=createCellWithInput('num-input','0.00',{inputmode:'decimal',enterkeyhint:'next',pattern:"[0-9.,\- ]*"}, outDef);
+        tr.appendChild(outCell.td);
+        const payoutTd=document.createElement('td'); payoutTd.className='payout'; payoutTd.textContent='0.00'; tr.appendChild(payoutTd);
+
+        attachFieldHandlers(nameCell.inp, inCell.inp, outCell.inp);
+
+        tr._refs={name:nameCell.inp,in:inCell.inp,out:outCell.inp,payout:payoutTd};
+        return tr;
+      }
+
+      function updateCapNote(){
+        const count=rowsTbody.children.length;
+        capNote.textContent=`${count} / ${MAX_ROWS} rows`;
+        addRowBtn.disabled=count>=MAX_ROWS;
+        deleteRowBtn.disabled=count<=0;
+      }
+
+      function addRow(values){
+        if(rowsTbody.children.length>=MAX_ROWS) return null;
+        const tr=createRow(values); rowsTbody.appendChild(tr);
+        updateCapNote(); recalc(); save(); return tr;
+      }
+
+      function deleteRow(){
+        if(rowsTbody.children.length>0){
+          rowsTbody.removeChild(rowsTbody.lastElementChild);
+          updateCapNote(); recalc(); save();
+        }
+      }
+
+      function clearTable(){
+        rowsTbody.innerHTML='';
+        for(let i=0;i<2;i++) addRow();
+        (function(){ var first = rowsTbody.querySelector('.name-input'); if (first) first.focus(); })();
+        recalc();
+        localStorage.removeItem(STORAGE_KEY);
+      }
+
+      function serialize(){
+        const rows=[];
+        for(const tr of rowsTbody.children){
+          rows.push({
+            name: tr._refs.name.value,
+            in: tr._refs.in.value,
+            out: tr._refs.out.value
+          });
+        }
+        return { rows };
+      }
+
+      function save(){
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(serialize())); }
+        catch(e){ /* storage might be disabled */ }
+      }
+
+      function restore(){
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if(!raw) return false;
+          const data = JSON.parse(raw);
+          if(!data || !Array.isArray(data.rows)) return false;
+          rowsTbody.innerHTML='';
+          for(const r of data.rows){ addRow({ name: r.name ?? '', in: r.in ?? '', out: r.out ?? '' }); }
+          recalc();
+          return true;
+        } catch(e){ return false; }
+      }
+
+      function recalc(){
+        let totalIn=0,totalOut=0;
+        for(const tr of rowsTbody.children){
+          const inv=parseNum(tr._refs.in.value); const outv=parseNum(tr._refs.out.value);
+          const payout=outv-inv; tr._refs.payout.textContent=fmt(payout);
+          totalIn+=inv; totalOut+=outv;
+        }
+        totalInEl.textContent=fmt(totalIn); totalOutEl.textContent=fmt(totalOut); totalPayoutEl.textContent=fmt(totalOut-totalIn);
+        const balanced=Math.abs(Math.round((totalOut-totalIn)*100))===0;
+        statusEl.classList.toggle('ok',balanced); statusEl.classList.toggle('warn',!balanced);
+        statusText.textContent=balanced?'Balanced':'Unbalanced';
+      }
+
+      // init
+      if(!restore()){
+        for(let i=0;i<2;i++) addRow();
+      }
+      addRowBtn.addEventListener('click',()=>{const tr=addRow(); if(tr) tr._refs.name.focus();});
+      deleteRowBtn.addEventListener('click',deleteRow);
+      clearBtn.addEventListener('click',clearTable);
+      recalc();
+    })();
+
+    // --- Single-file icon generator (PNG) for home-screen shortcuts ---
+    (function(){
+      // Many platforms prefer PNG for home screen. We draw a green spade onto a dark rounded square.
+      function makeIcon(size){
+        const c=document.createElement('canvas'); c.width=c.height=size; const ctx=c.getContext('2d');
+        // background
+        ctx.fillStyle='#0b1020';
+        const r=size*0.18; // corner radius
+        const w=size, h=size; ctx.beginPath();
+        ctx.moveTo(r,0); ctx.arcTo(w,0,w,r,r); ctx.arcTo(w,h,w-r,h,r); ctx.arcTo(0,h,0,h-r,r); ctx.arcTo(0,0,r,0,r); ctx.closePath();
+        ctx.fill();
+        // spade glyph
+        ctx.fillStyle='#10b981';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.font = `${Math.floor(size*0.7)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+        ctx.fillText('♠', size/2, size/2 + size*0.02);
+        return c.toDataURL('image/png');
+      }
+      try{
+        const icon192 = makeIcon(192);
+        const icon512 = makeIcon(512);
+        const l1 = document.createElement('link');
+        l1.rel = 'apple-touch-icon'; l1.sizes = '192x192'; l1.href = icon192; document.head.appendChild(l1);
+        const l2 = document.createElement('link');
+        l2.rel = 'apple-touch-icon'; l2.sizes = '512x512'; l2.href = icon512; document.head.appendChild(l2);
+        // also register a PNG favicon fallback for some launchers
+        const linkPng = document.createElement('link');
+        linkPng.rel='icon'; linkPng.type='image/png'; linkPng.sizes='192x192'; linkPng.href=icon192;
+        document.head.appendChild(linkPng);
+      }catch(e){ /* ignore */ }
+    })();
+  </script>
+</body>
+</html>
