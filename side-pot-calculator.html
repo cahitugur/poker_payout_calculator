@@ -94,14 +94,14 @@
     .pot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .pot-name { font-weight: 600; }
     .pot-amount { font-variant-numeric: tabular-nums; font-weight: 700; }
-    .pot-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+    .pot-details { margin-top: 8px; }
     .pot-section { font-size: 12px; }
     .pot-section-title { color: var(--muted); font-weight: 600; margin-bottom: 6px; }
     .pot-players { color: var(--text); }
-    .pot-winners { display: flex; flex-direction: column; gap: 4px; }
+    .pot-winners { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
     .winner-checkbox { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
     .winner-checkbox input[type="checkbox"] { cursor: pointer; accent-color: var(--ok); }
-    .winner-checkbox label { cursor: pointer; flex: 1; }
+    .winner-checkbox label { cursor: pointer; }
 
     /* Mobile-friendly responsive design */
     @media (max-width: 768px) {
@@ -128,10 +128,6 @@
       .pot-header { flex-direction: column; align-items: flex-start; gap: 4px; }
       .pot-name { font-size: 13px; }
       .pot-amount { font-size: 15px; }
-
-      .pot-details { grid-template-columns: 1fr; gap: 10px; }
-      .pot-section { font-size: 12px; }
-      .pot-section-title { margin-bottom: 4px; font-size: 11px; }
 
       .pot-players { font-size: 12px; line-height: 1.4; }
       .pot-winners { gap: 2px; }
@@ -387,15 +383,6 @@
           const potDetails = document.createElement('div');
           potDetails.className = 'pot-details';
 
-          // Eligible players section
-          const eligibleSection = document.createElement('div');
-          eligibleSection.className = 'pot-section';
-          eligibleSection.innerHTML = '<div class="pot-section-title">Eligible Players</div>';
-          const playersList = document.createElement('div');
-          playersList.className = 'pot-players';
-          playersList.textContent = pot.players.join(', ');
-          eligibleSection.appendChild(playersList);
-
           // Winner selection section
           const winnersSection = document.createElement('div');
           winnersSection.className = 'pot-section';
@@ -427,7 +414,6 @@
           }
           winnersSection.appendChild(winnersDiv);
 
-          potDetails.appendChild(eligibleSection);
           potDetails.appendChild(winnersSection);
 
           potDiv.appendChild(potHeader);
