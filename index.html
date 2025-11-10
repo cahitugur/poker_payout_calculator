@@ -112,6 +112,60 @@
     .controls .spacer { flex: 1; }
 
     footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 0; }
+
+    /* Mobile-friendly responsive design */
+    @media (max-width: 768px) {
+      .wrap { padding: 0 12px; margin: 20px auto; }
+      h1 { font-size: 24px; margin: 0 0 12px; }
+
+      .toolbar { padding: 8px 10px; gap: 6px; }
+      .nav-link { font-size: 12px; }
+
+      .controls { flex-wrap: wrap; }
+      .btn { padding: 10px 12px; font-size: 13px; border-radius: 4px; }
+
+      table { font-size: 13px; }
+      col.col-name { width: 50%; }
+      col.col-in, col.col-out { width: 6ch; min-width: 6ch; }
+      col.col-payout { width: 8ch; min-width: 7ch; }
+      col.col-step { width: 2.5ch; }
+      thead th, tbody td, tfoot th { padding: 6px 4px; }
+
+      .name-input, .num-input { padding: 8px 6px; font-size: 13px; min-height: 40px; }
+      .buyin-input { width: 8ch; padding: 6px 6px; font-size: 13px; }
+
+      .step-btn { width: 14px; height: 12px; font-size: 12px; }
+      .step-btn.minus { margin-left: 12px; }
+      .step-btn.plus { margin-right: 12px; }
+
+      footer { padding: 12px 0; font-size: 11px; }
+    }
+
+    @media (max-width: 480px) {
+      .wrap { margin: 16px auto; padding: 0 8px; }
+      h1 { font-size: 20px; margin: 0 0 10px; }
+
+      .toolbar { padding: 6px 8px; gap: 4px; }
+      .nav-link { font-size: 11px; }
+
+      .btn { padding: 8px 10px; font-size: 12px; }
+
+      table { font-size: 12px; }
+      col.col-name { width: 55%; }
+      col.col-in, col.col-out { width: 5.5ch; min-width: 5.5ch; }
+      col.col-payout { width: 7ch; min-width: 6.5ch; }
+      col.col-step { width: 2ch; }
+      thead th, tbody td, tfoot th { padding: 5px 3px; }
+
+      .name-input, .num-input { padding: 6px 4px; font-size: 12px; min-height: 36px; }
+      .buyin-input { width: 7ch; padding: 6px 4px; font-size: 12px; }
+
+      .step-btn { width: 12px; height: 10px; font-size: 10px; }
+      .step-btn.minus { margin-left: 8px; }
+      .step-btn.plus { margin-right: 8px; }
+
+      footer { padding: 10px 0; font-size: 10px; }
+    }
   </style>
 </head>
 <body>
