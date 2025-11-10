@@ -1,0 +1,567 @@
+<!--
+  Copyright (c) 2025 Cahit Ugur
+  SPDX-License-Identifier: MIT
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Side Pot Calculator</title>
+  <!-- Favicon: green spade icon (SVG for tabs); PNG touch icon will be generated at runtime -->
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" ry="12" fill="%230b1020"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="44" font-family="system-ui,Segoe UI,Roboto,Helvetica,Arial" fill="%2310b981">♠</text></svg>'/>
+  <meta name="theme-color" content="#0b1020" />
+  <!-- Single-file shortcut support (best-effort): iOS/Android home-screen shortcuts look for apple-touch-icon -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --muted: #94a3b8;
+      --text: #e2e8f0;
+      --accent: #22d3ee;
+      --ok: #10b981;
+      --warn: #ef4444;
+      --outline: #1f2937;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background-color: var(--bg); background: radial-gradient(1200px 700px at 80% -10%, #0b122a 0%, var(--bg) 60%);
+      color: var(--text);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .wrap { max-width: 1100px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-weight: 800; margin: 0 0 18px; text-align: center; }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid var(--outline);
+      border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    .toolbar { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--outline); }
+
+    .btn {
+      appearance: none; border: 1px solid var(--outline); background: #0b1020; color: var(--text);
+      padding: 8px 8px; border-radius: 6px; cursor: pointer; font-weight: 600;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease;
+    }
+    .btn:hover { background: #0e1530; }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .nav-link {
+      appearance: none; border: none; background: transparent; color: var(--accent); cursor: pointer;
+      font-weight: 600; font-size: 14px; padding: 0; text-decoration: underline;
+      transition: color .2s ease;
+    }
+    .nav-link:hover { color: var(--text); }
+
+    .status { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+    .dot { width: 12px; height: 12px; border-radius: 999px; display: inline-block; }
+    .ok  { color: var(--ok); }
+    .ok .dot { background: var(--ok); }
+    .warn  { color: var(--warn); }
+    .warn .dot { background: var(--warn); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    col.col-name { width: auto; }
+    col.col-bet { width: 9ch; min-width: 9ch; }
+    col.col-won { width: 9ch; min-width: 9ch; }
+    thead th:nth-child(2), thead th:nth-child(3) { text-align: center; }
+    thead th { text-align: left; font-size: 14px; color: var(--muted); padding: 8px 14px; background: #0b1020; }
+    tbody td, tfoot th { padding: 8px 14px; border-top: 1px solid var(--outline); }
+    tfoot th { background: #0b1020; font-weight: 800; }
+
+    .name-input, .num-input {
+      width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--outline); background: #0c1328; color: var(--text); outline: none;
+    }
+    .num-input { text-align: right; font-variant-numeric: tabular-nums; }
+    .payout { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+    .controls { display: flex; gap: 10px; align-items: center; }
+    .controls .spacer { flex: 1; }
+
+    .pots-display { margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--outline); border-radius: 12px; }
+    .pots-display h3 { margin: 0 0 12px; font-size: 14px; color: var(--muted); }
+    .pot-item { padding: 12px; margin: 8px 0; background: rgba(255,255,255,0.04); border-radius: 6px; border-left: 3px solid var(--ok); }
+    .pot-item.side-pot { border-left-color: var(--accent); }
+    .pot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .pot-name { font-weight: 600; }
+    .pot-amount { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .pot-details { margin-top: 8px; }
+    .pot-section { font-size: 12px; }
+    .pot-section-title { color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+    .pot-players { color: var(--text); }
+    .pot-winners { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+    .winner-checkbox { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
+    .winner-checkbox input[type="checkbox"] { cursor: pointer; accent-color: var(--ok); }
+    .winner-checkbox label { cursor: pointer; }
+
+    /* Mobile-friendly responsive design */
+    @media (max-width: 768px) {
+      .wrap { padding: 0 12px; margin: 20px auto; }
+      h1 { font-size: 24px; margin: 0 0 12px; }
+
+      .toolbar { padding: 8px 10px; gap: 6px; }
+      .nav-link { font-size: 12px; }
+
+      .controls { flex-wrap: wrap; }
+      .btn { padding: 10px 12px; font-size: 13px; border-radius: 4px; }
+
+      table { font-size: 13px; }
+      col.col-name { width: 40%; }
+      col.col-bet, col.col-won { width: 30%; }
+      thead th, tbody td, tfoot th { padding: 6px 8px; }
+
+      .name-input, .num-input { padding: 10px 6px; font-size: 14px; min-height: 40px; }
+
+      .pots-display { margin-top: 16px; padding: 12px; }
+      .pots-display h3 { font-size: 13px; margin: 0 0 10px; }
+
+      .pot-item { padding: 10px; margin: 6px 0; }
+      .pot-header { gap: 4px; }
+      .pot-name { font-size: 13px; }
+      .pot-amount { font-size: 15px; }
+
+      .pot-players { font-size: 12px; line-height: 1.4; }
+      .pot-winners { gap: 2px; }
+
+      .winner-checkbox { padding: 8px 0; }
+      .winner-checkbox input[type="checkbox"] { width: 18px; height: 18px; }
+      .winner-checkbox label { font-size: 13px; }
+
+      footer { padding: 16px 0; font-size: 11px; }
+    }
+
+    @media (max-width: 480px) {
+      .wrap { margin: 16px auto; padding: 0 8px; }
+      h1 { font-size: 20px; margin: 0 0 10px; }
+
+      .toolbar { padding: 6px 8px; gap: 4px; }
+      .nav-link { font-size: 11px; }
+
+      .btn { padding: 8px 10px; font-size: 12px; }
+
+      table { font-size: 12px; }
+      col.col-name { width: 45%; }
+      col.col-bet, col.col-won { width: 27.5%; }
+      thead th, tbody td, tfoot th { padding: 5px 6px; }
+
+      .name-input, .num-input { padding: 8px 6px; font-size: 13px; min-height: 36px; }
+
+      .pots-display { padding: 10px; margin-top: 12px; }
+      .pots-display h3 { font-size: 12px; margin: 0 0 8px; }
+
+      .pot-item { padding: 8px; margin: 4px 0; }
+      .pot-name { font-size: 12px; }
+      .pot-amount { font-size: 14px; }
+
+      .pot-details { gap: 8px; }
+      .pot-section-title { font-size: 10px; margin-bottom: 3px; }
+      .pot-players { font-size: 11px; }
+      .pot-winners { gap: 1px; }
+
+      .winner-checkbox { padding: 6px 0; }
+      .winner-checkbox input[type="checkbox"] { width: 16px; height: 16px; }
+      .winner-checkbox label { font-size: 12px; }
+
+      footer { padding: 12px 0; font-size: 10px; }
+    }
+
+    footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Side Pot Calculator</h1>
+    <div class="card">
+      <div class="toolbar">
+        <span aria-hidden="true" title="Poker" style="display:inline-flex;align-items:center;gap:8px">
+          <svg width="22" height="22" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
+            <title>Spade</title>
+            <path fill="#10b981" d="M32 6C20 18 8 26 8 36c0 6 5 11 11 11 4 0 8-2 10-5-1 5-3 9-8 12h22c-5-3-7-7-8-12 2 3 6 5 10 5 6 0 11-5 11-11 0-10-12-18-24-30z"/>
+          </svg>
+        </span>
+        <span class="spacer" style="flex: 1;"></span>
+        <a href="index.html" class="nav-link">Payout Calculator →</a>
+      </div>
+
+      <div class="table-wrap">
+        <form id="calcForm">
+          <table>
+            <colgroup>
+              <col class="col-name">
+              <col class="col-bet">
+              <col class="col-won">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="controls-cell" colspan="3">
+                  <div class="controls">
+                    <button id="addRowBtn" class="btn" type="button">➕ Add Player</button>
+                    <button id="deleteRowBtn" class="btn" type="button">➖ Delete Player</button>
+                    <button id="clearBtn" class="btn" type="button">🧹 Clear</button>
+                  </div>
+                </th>
+              </tr>
+              <tr>
+                <th>Name</th>
+                <th>Bet</th>
+                <th>Pot Won</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+
+            <tfoot>
+              <tr>
+                <th>Total</th>
+                <th id="totalBet" style="text-align: right; font-variant-numeric: tabular-nums;">0.00</th>
+                <th id="totalWon" style="text-align: right; font-variant-numeric: tabular-nums;">0.00</th>
+              </tr>
+            </tfoot>
+          </table>
+        </form>
+      </div>
+
+      <div class="pots-display" id="potsDisplay" style="display: none;">
+        <h3>Pot Breakdown</h3>
+        <div id="potsList"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    Version 1.3.0
+  </footer>
+
+  <script>
+    (function(){
+      const MAX_ROWS = 32;
+      const STORAGE_KEY = 'poker-sidepot:v1';
+
+      const rowsTbody = document.getElementById('rows');
+      const addRowBtn = document.getElementById('addRowBtn');
+      const deleteRowBtn = document.getElementById('deleteRowBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const totalBetEl = document.getElementById('totalBet');
+      const potsDisplay = document.getElementById('potsDisplay');
+      const potsList = document.getElementById('potsList');
+
+      function fmt(n){ return (Math.round(n*100)/100).toFixed(2).replace('-0.00','0.00'); }
+      function parseNum(v){
+        if(!v) return 0;
+        let str = String(v).trim();
+        if(str==='') return 0;
+        if(str.includes(',') && str.includes('.')){
+          if(str.lastIndexOf(',')>str.lastIndexOf('.')) str=str.replace(/\./g,'').replace(',', '.');
+          else str=str.replace(/,/g,'');
+        } else if(str.includes(',')) str=str.replace(/\./g,'').replace(',', '.');
+        const num=parseFloat(str.replace(/[^0-9+\-\.]/g,''));
+        return Number.isFinite(num)?num:0;
+      }
+
+      function validateInput(i){
+        const raw=i.value.trim();
+        if(raw===''){i.classList.remove('invalid');return;}
+        const ok=!isNaN(parseNum(raw));
+        i.classList.toggle('invalid',!ok);
+      }
+
+      function createCellWithInput(cls,ph,opts={},def=''){
+        const td=document.createElement('td');
+        const inp=document.createElement('input');
+        inp.type='text';inp.className=cls;inp.placeholder=ph;inp.autocomplete='off';inp.spellcheck=false;
+        if(opts.inputmode) inp.setAttribute('inputmode',opts.inputmode);
+        if(opts.enterkeyhint) inp.setAttribute('enterkeyhint',opts.enterkeyhint);
+        if(opts.pattern) inp.setAttribute('pattern',opts.pattern);
+        if(def!=='') inp.value=def;
+        td.appendChild(inp);return {td,inp};
+      }
+
+      function focusNext(from){
+        const inputs=[...rowsTbody.querySelectorAll('.name-input,.num-input')];
+        const idx=inputs.indexOf(from);
+        if(idx===-1) return; const next=inputs[idx+1];
+        if(next){next.focus();if (next.select) next.select();}
+      }
+
+      function attachFieldHandlers(nameInp, betInp){
+        const onChange=()=>{ validateInput(betInp); recalc(); save(); };
+        betInp.addEventListener('input', onChange);
+        for(const el of [nameInp,betInp]){
+          el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); focusNext(e.currentTarget); } });
+          el.addEventListener('input', save);
+        }
+      }
+
+      function createRow(values){
+        const tr=document.createElement('tr');
+        const nameDef = values?.name ?? '';
+        const betDef  = values?.bet ?? '0.00';
+
+        // Name cell
+        const nameCell=createCellWithInput('name-input','Player',{inputmode:'text',enterkeyhint:'next'}, nameDef);
+        tr.appendChild(nameCell.td);
+
+        // Bet cell
+        const betCell=createCellWithInput('num-input','0.00',{inputmode:'decimal',enterkeyhint:'next',pattern:"[0-9.,\\- ]*"}, betDef);
+        tr.appendChild(betCell.td);
+
+        // Pot Won cell (display only, calculated by the algorithm)
+        const wonTd = document.createElement('td');
+        wonTd.className = 'payout';
+        wonTd.textContent = '0.00';
+        tr.appendChild(wonTd);
+
+        // attach handlers
+        attachFieldHandlers(nameCell.inp, betCell.inp);
+
+        tr._refs={name:nameCell.inp,bet:betCell.inp,wonTd:wonTd};
+        return tr;
+      }
+
+      function calculateSidePots(){
+        const rows=[];
+        for(const tr of rowsTbody.children){
+          const name = tr._refs.name.value.trim() || '(no name)';
+          const bet = parseNum(tr._refs.bet.value);
+          if(bet > 0){
+            rows.push({name, bet, original: bet, tr});
+          }
+        }
+
+        if(rows.length === 0) return [];
+
+        // Sort by bet amount
+        rows.sort((a,b)=>a.bet-b.bet);
+
+        const pots = [];
+        let prevBet = 0;
+        let remainingPlayers = rows.length;
+
+        for(let i=0; i<rows.length; i++){
+          const currentBet = rows[i].bet;
+          if(currentBet > prevBet){
+            const potSize = (currentBet - prevBet) * remainingPlayers;
+            const potPlayers = rows.slice(i).map(p=>p.name);
+            const potEligibleRows = rows.slice(i).map(p=>p.tr);
+            const potName = pots.length === 0 ? 'Main Pot' : `Side Pot ${pots.length}`;
+            pots.push({name: potName, size: potSize, players: potPlayers, eligibleRows: potEligibleRows, winners: []});
+          }
+          remainingPlayers--;
+          prevBet = currentBet;
+        }
+
+        return pots;
+      }
+
+      function displayPots(pots){
+        if(pots.length === 0){
+          potsDisplay.style.display='none';
+          return;
+        }
+
+        potsDisplay.style.display='block';
+        potsList.innerHTML='';
+
+        for(let potIdx = 0; potIdx < pots.length; potIdx++){
+          const pot = pots[potIdx];
+          const potDiv = document.createElement('div');
+          potDiv.className = 'pot-item' + (pot.name.includes('Side') ? ' side-pot' : '');
+
+          const potHeader = document.createElement('div');
+          potHeader.className = 'pot-header';
+          potHeader.innerHTML = `<div class="pot-name">${pot.name}</div><div class="pot-amount">${fmt(pot.size)}</div>`;
+
+          const potDetails = document.createElement('div');
+          potDetails.className = 'pot-details';
+
+          // Winner selection section
+          const winnersSection = document.createElement('div');
+          winnersSection.className = 'pot-section';
+          winnersSection.innerHTML = '<div class="pot-section-title">Winner(s)</div>';
+          const winnersDiv = document.createElement('div');
+          winnersDiv.className = 'pot-winners';
+
+          for(let i = 0; i < pot.players.length; i++){
+            const playerName = pot.players[i];
+            const checkboxId = `pot-${potIdx}-winner-${i}`;
+
+            const label = document.createElement('label');
+            label.className = 'winner-checkbox';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = checkboxId;
+            checkbox.dataset.potIdx = potIdx;
+            checkbox.dataset.playerIdx = i;
+            checkbox.addEventListener('change', ()=> { calculateWinnings(pots); save(); });
+
+            const labelText = document.createElement('label');
+            labelText.htmlFor = checkboxId;
+            labelText.textContent = playerName;
+
+            label.appendChild(checkbox);
+            label.appendChild(labelText);
+            winnersDiv.appendChild(label);
+          }
+          winnersSection.appendChild(winnersDiv);
+
+          potDetails.appendChild(winnersSection);
+
+          potDiv.appendChild(potHeader);
+          potDiv.appendChild(potDetails);
+          potsList.appendChild(potDiv);
+        }
+      }
+
+      function addRow(values){
+        if(rowsTbody.children.length>=MAX_ROWS) return null;
+        const tr=createRow(values); rowsTbody.appendChild(tr);
+        recalc(); save(); return tr;
+      }
+
+      function deleteRow(){
+        if(rowsTbody.children.length>0){
+          rowsTbody.removeChild(rowsTbody.lastElementChild);
+          recalc(); save();
+        }
+      }
+
+      function clearTable(){
+        rowsTbody.innerHTML='';
+        for(let i=0;i<2;i++) addRow();
+        (function(){ var first = rowsTbody.querySelector('.name-input'); if (first) first.focus(); })();
+        recalc();
+        localStorage.removeItem(STORAGE_KEY);
+      }
+
+      function serialize(){
+        const rows=[];
+        for(const tr of rowsTbody.children){
+          rows.push({
+            name: tr._refs.name.value,
+            bet: tr._refs.bet.value
+          });
+        }
+        return { rows };
+      }
+
+      function save(){
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(serialize())); }
+        catch(e){ /* storage might be disabled */ }
+      }
+
+      function restore(){
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if(!raw) return false;
+          const data = JSON.parse(raw);
+          if(!data || !Array.isArray(data.rows)) return false;
+          rowsTbody.innerHTML='';
+          for(const r of data.rows){ addRow({ name: r.name ?? '', bet: r.bet ?? '0.00' }); }
+          recalc();
+          return true;
+        } catch(e){ return false; }
+      }
+
+      function calculateWinnings(pots){
+        // Reset all pot won amounts
+        for(const tr of rowsTbody.children){
+          tr._refs.wonTd.textContent = '0.00';
+        }
+
+        // For each pot, find checked winners and distribute pot amount
+        for(let potIdx = 0; potIdx < pots.length; potIdx++){
+          const pot = pots[potIdx];
+          const checkedWinners = [];
+
+          // Find all checked winner checkboxes for this pot
+          const potCheckboxes = potsList.querySelectorAll(`input[data-pot-idx="${potIdx}"]:checked`);
+          for(const cb of potCheckboxes){
+            const playerIdx = parseInt(cb.dataset.playerIdx);
+            checkedWinners.push(pot.players[playerIdx]);
+          }
+
+          // If there are winners, distribute the pot among them equally
+          if(checkedWinners.length > 0){
+            const winPerWinner = pot.size / checkedWinners.length;
+            for(const tr of rowsTbody.children){
+              const playerName = tr._refs.name.value.trim();
+              if(checkedWinners.includes(playerName)){
+                const currentWon = parseNum(tr._refs.wonTd.textContent);
+                tr._refs.wonTd.textContent = fmt(currentWon + winPerWinner);
+              }
+            }
+          }
+        }
+
+        // Update total pot won
+        let totalWon = 0;
+        for(const tr of rowsTbody.children){
+          totalWon += parseNum(tr._refs.wonTd.textContent);
+        }
+        document.getElementById('totalWon').textContent = fmt(totalWon);
+      }
+
+      function recalc(){
+        let totalBet=0;
+        for(const tr of rowsTbody.children){
+          const betv=parseNum(tr._refs.bet.value);
+          if(betv < 0) tr._refs.bet.value = fmt(0);
+          totalBet+=parseNum(tr._refs.bet.value);
+        }
+        totalBetEl.textContent=fmt(totalBet);
+
+        const pots = calculateSidePots();
+        displayPots(pots);
+        calculateWinnings(pots);
+      }
+
+      // init
+      if(!restore()){
+        for(let i=0;i<2;i++) addRow();
+      }
+      addRowBtn.addEventListener('click',()=>{const tr=addRow(); if(tr) tr._refs.name.focus();});
+      deleteRowBtn.addEventListener('click',deleteRow);
+      clearBtn.addEventListener('click',clearTable);
+      recalc();
+    })();
+
+    // --- Single-file icon generator (PNG) for home-screen shortcuts ---
+    (function(){
+      function makeIcon(size){
+        const c=document.createElement('canvas'); c.width=c.height=size; const ctx=c.getContext('2d');
+        ctx.fillStyle='#0b1020';
+        const r=size*0.18;
+        const w=size, h=size; ctx.beginPath();
+        ctx.moveTo(r,0); ctx.arcTo(w,0,w,r,r); ctx.arcTo(w,h,w-r,h,r); ctx.arcTo(0,h,0,h-r,r); ctx.arcTo(0,0,r,0,r); ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle='#10b981';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.font = `${Math.floor(size*0.7)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+        ctx.fillText('♠', size/2, size/2 + size*0.02);
+        return c.toDataURL('image/png');
+      }
+      try{
+        const icon192 = makeIcon(192);
+        const icon512 = makeIcon(512);
+        const l1 = document.createElement('link');
+        l1.rel = 'apple-touch-icon'; l1.sizes = '192x192'; l1.href = icon192; document.head.appendChild(l1);
+        const l2 = document.createElement('link');
+        l2.rel = 'apple-touch-icon'; l2.sizes = '512x512'; l2.href = icon512; document.head.appendChild(l2);
+        const linkPng = document.createElement('link');
+        linkPng.rel='icon'; linkPng.type='image/png'; linkPng.sizes='192x192'; linkPng.href=icon192;
+        document.head.appendChild(linkPng);
+      }catch(e){ /* ignore */ }
+    })();
+  </script>
+</body>
+</html>
