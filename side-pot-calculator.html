@@ -557,7 +557,7 @@
         rowsTbody.innerHTML='';
         rowsTbody.appendChild(createInitialPotRow(''));
         for(let i=0;i<2;i++) addRow();
-        (function(){ var first = rowsTbody.querySelector('.name-input'); if (first) first.focus(); })();
+        (function(){ var first = rowsTbody.querySelector('.name-input'); if (first && window.innerWidth >= 1024) first.focus(); })();
         recalc();
         localStorage.removeItem(STORAGE_KEY);
       }
@@ -722,7 +722,7 @@
         for(let i=0;i<2;i++) addRow();
       }
 
-      addRowBtn.addEventListener('click',()=>{const tr=addRow(); if(tr) tr._refs.name.focus();});
+      addRowBtn.addEventListener('click',()=>{const tr=addRow(); if(tr) { if(window.innerWidth >= 1024) tr._refs.name.focus(); }});
       deleteRowBtn.addEventListener('click',deleteRow);
       clearBtn.addEventListener('click',clearTable);
       if(boardsInput){
