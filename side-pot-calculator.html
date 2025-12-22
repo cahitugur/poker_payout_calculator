@@ -1,3 +1,4 @@
+
 <!--
   Copyright (c) 2025 Cahit Ugur
   SPDX-License-Identifier: MIT
@@ -14,117 +15,68 @@
   <!-- Single-file shortcut support (best-effort): iOS/Android home-screen shortcuts look for apple-touch-icon -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="stylesheet" href="shared-styles.css" />
   <style>
-    :root {
-      --bg: #0f172a;
-      --panel: #111827;
-      --muted: #94a3b8;
-      --text: #e2e8f0;
-      --accent: #22d3ee;
-      --ok: #10b981;
-      --warn: #ef4444;
-      --outline: #1f2937;
-    }
-
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-      background-color: var(--bg); background: radial-gradient(1200px 700px at 80% -10%, #0b122a 0%, var(--bg) 60%);
-      color: var(--text);
-      -webkit-text-size-adjust: 100%;
-    }
-
-    .wrap { max-width: 1100px; margin: 40px auto; padding: 0 16px; }
-    h1 { font-weight: 800; margin: 0 0 18px; text-align: center; }
-
-    .card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-      border: 1px solid var(--outline);
-      border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-
-    .toolbar { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--outline); }
-
-    .btn {
-      appearance: none; border: 1px solid var(--outline); background: #0b1020; color: var(--text);
-      padding: 8px 8px; border-radius: 6px; cursor: pointer; font-weight: 600;
-      transition: transform .06s ease, background .2s ease, border-color .2s ease;
-    }
-    .btn:hover { background: #0e1530; }
-    .btn:active { transform: translateY(1px); }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-
-    .nav-link {
-      appearance: none; border: none; background: transparent; color: var(--accent); cursor: pointer;
-      font-weight: 600; font-size: 14px; padding: 0; text-decoration: underline;
-      transition: color .2s ease;
-    }
-    .nav-link:hover { color: var(--text); }
-
-    .status { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
-    .dot { width: 12px; height: 12px; border-radius: 999px; display: inline-block; }
-    .ok  { color: var(--ok); }
-    .ok .dot { background: var(--ok); }
-    .warn  { color: var(--warn); }
-    .warn .dot { background: var(--warn); }
-
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    /* Page-specific styles for side-pot-calculator.html */
     col.col-name { width: auto; }
-    col.col-bet { width: 9ch; min-width: 9ch; }
-    col.col-won { width: 9ch; min-width: 9ch; }
-    thead th:nth-child(2), thead th:nth-child(3) { text-align: center; }
-    thead th { text-align: left; font-size: 14px; color: var(--muted); padding: 8px 14px; background: #0b1020; }
-    tbody td, tfoot th { padding: 8px 14px; border-top: 1px solid var(--outline); }
-    tfoot th { background: #0b1020; font-weight: 800; }
+    col.col-empty { width: 24px; min-width: 24px; }
+    col.col-empty-wide { width: 10ch; min-width: 10ch; }
+    col.col-bet, col.col-won { width: 10ch; min-width: 10ch; }
+    /* Center-align Bet (5th) and Pot Won (6th) headers */
+    thead th:nth-child(5), thead th:nth-child(6) { text-align: center; }
+    tbody td:nth-child(5) { text-align: center; }
+    tbody td:nth-child(6) { text-align: right; }
+    tfoot th { text-align: right; }
 
-    .name-input, .num-input {
-      width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--outline); background: #0c1328; color: var(--text); outline: none;
-    }
-    .num-input { text-align: right; font-variant-numeric: tabular-nums; }
-    .payout { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
-    .controls { display: flex; gap: 10px; align-items: center; }
-    .controls .spacer { flex: 1; }
+    /* Empty columns styling */
+    .empty-cell { padding: 0 !important; }
+
+    .name-input { width: calc(100%); }
+    .num-input { padding: 6px 4px; }
+    .num-input.zero-value { color: var(--muted) !important; }
+
+    /* Boards input styling */
+    .boards-container { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+    .boards-label { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1; }
+    .boards-input { width: 9ch; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--outline); background: #0c1328; color: var(--text); text-align: center; font-variant-numeric: tabular-nums; outline: none; }
+
+    /* Add top margin to buttons to match label height */
+    .controls .btn { margin-top: 15px; }
 
     .pots-display { margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--outline); border-radius: 12px; }
     .pots-display h3 { margin: 0 0 12px; font-size: 14px; color: var(--muted); }
-    .pot-item { padding: 12px; margin: 8px 0; background: rgba(255,255,255,0.04); border-radius: 6px; border-left: 3px solid var(--ok); }
+    .boards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .board-column { flex: 1; }
+    .board-title { font-weight: 700; font-size: 13px; color: var(--accent); margin-bottom: 12px; text-align: center; }
+    .pot-item { padding: 8px; margin: 6px 0; background: rgba(255,255,255,0.04); border-radius: 6px; border-left: 3px solid var(--ok); }
     .pot-item.side-pot { border-left-color: var(--accent); }
-    .pot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .pot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .pot-name { font-weight: 600; }
     .pot-amount { font-variant-numeric: tabular-nums; font-weight: 700; }
-    .pot-details { margin-top: 8px; }
+    .pot-details { margin-top: 6px; }
     .pot-section { font-size: 12px; }
     .pot-section-title { color: var(--muted); font-weight: 600; margin-bottom: 6px; }
     .pot-players { color: var(--text); }
     .pot-winners { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; }
-    .winner-checkbox { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
+    .winner-checkbox { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
     .winner-checkbox input[type="checkbox"] { cursor: pointer; accent-color: var(--ok); }
     .winner-checkbox label { cursor: pointer; }
 
     /* Mobile-friendly responsive design */
     @media (max-width: 768px) {
-      .wrap { padding: 0 12px; margin: 20px auto; }
-      h1 { font-size: 24px; margin: 0 0 12px; }
+      col.col-name { width: 35%; }
+      col.col-empty { width: 22px; min-width: 22px; }
+      col.col-empty-wide { width: 10ch; min-width: 10ch; }
+      col.col-bet, col.col-won { width: 10ch; min-width: 10ch; }
 
-      .toolbar { padding: 8px 10px; gap: 6px; }
-      .nav-link { font-size: 12px; }
+      thead th, tbody td, tfoot th { padding: 6px 4px; }
 
-      .controls { flex-wrap: wrap; }
-      .btn { padding: 10px 12px; font-size: 13px; border-radius: 4px; }
-
-      table { font-size: 13px; }
-      col.col-name { width: 40%; }
-      col.col-bet, col.col-won { width: 30%; }
-      thead th, tbody td, tfoot th { padding: 6px 8px; }
-
-      .name-input, .num-input { padding: 10px 6px; font-size: 14px; min-height: 40px; }
+      .boards-input { width: 7ch; padding: 6px 6px; font-size: 13px; }
 
       .pots-display { margin-top: 16px; padding: 12px; }
       .pots-display h3 { font-size: 13px; margin: 0 0 10px; }
 
-      .pot-item { padding: 10px; margin: 6px 0; }
+      .pot-item { padding: 6px; margin: 4px 0; }
       .pot-header { gap: 4px; }
       .pot-name { font-size: 13px; }
       .pot-amount { font-size: 15px; }
@@ -135,30 +87,22 @@
       .winner-checkbox { padding: 8px 0; }
       .winner-checkbox input[type="checkbox"] { width: 18px; height: 18px; }
       .winner-checkbox label { font-size: 13px; }
-
-      footer { padding: 16px 0; font-size: 11px; }
     }
 
     @media (max-width: 480px) {
-      .wrap { margin: 16px auto; padding: 0 8px; }
-      h1 { font-size: 20px; margin: 0 0 10px; }
+      col.col-name { width: 40%; }
+      col.col-empty { width: 20px; min-width: 20px; }
+      col.col-empty-wide { width: 8ch; min-width: 8ch; }
+      col.col-bet, col.col-won { width: 8ch; min-width: 8ch; }
 
-      .toolbar { padding: 6px 8px; gap: 4px; }
-      .nav-link { font-size: 11px; }
+      thead th, tbody td, tfoot th { padding: 5px 3px; }
 
-      .btn { padding: 8px 10px; font-size: 12px; }
-
-      table { font-size: 12px; }
-      col.col-name { width: 45%; }
-      col.col-bet, col.col-won { width: 27.5%; }
-      thead th, tbody td, tfoot th { padding: 5px 6px; }
-
-      .name-input, .num-input { padding: 8px 6px; font-size: 13px; min-height: 36px; }
+      .boards-grid { grid-template-columns: 1fr; gap: 12px; }
 
       .pots-display { padding: 10px; margin-top: 12px; }
       .pots-display h3 { font-size: 12px; margin: 0 0 8px; }
 
-      .pot-item { padding: 8px; margin: 4px 0; }
+      .pot-item { padding: 6px; margin: 3px 0; }
       .pot-name { font-size: 12px; }
       .pot-amount { font-size: 14px; }
 
@@ -170,11 +114,8 @@
       .winner-checkbox { padding: 6px 0; }
       .winner-checkbox input[type="checkbox"] { width: 16px; height: 16px; }
       .winner-checkbox label { font-size: 12px; }
-
-      footer { padding: 12px 0; font-size: 10px; }
     }
-
-    footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 0; }
+  </style>
   </style>
 </head>
 <body>
@@ -188,8 +129,12 @@
             <path fill="#10b981" d="M32 6C20 18 8 26 8 36c0 6 5 11 11 11 4 0 8-2 10-5-1 5-3 9-8 12h22c-5-3-7-7-8-12 2 3 6 5 10 5 6 0 11-5 11-11 0-10-12-18-24-30z"/>
           </svg>
         </span>
+        <div id="balanceStatus" class="status warn" aria-live="polite">
+          <span class="dot"></span>
+          <span class="status-text">Unbalanced</span>
+        </div>
         <span class="spacer" style="flex: 1;"></span>
-        <a href="index.html" class="nav-link">Payout Calculator →</a>
+        <a href="index.html" id="ppcLink" class="nav-link">Payout Calculator →</a>
       </div>
 
       <div class="table-wrap">
@@ -197,23 +142,37 @@
           <table>
             <colgroup>
               <col class="col-name">
+              <col class="col-empty">
+              <col class="col-empty-wide">
+              <col class="col-empty">
               <col class="col-bet">
               <col class="col-won">
             </colgroup>
             <thead>
               <tr>
-                <th class="controls-cell" colspan="3">
+                <th class="controls-cell" colspan="6">
                   <div class="controls">
-                    <button id="addRowBtn" class="btn" type="button">➕ Add Player</button>
-                    <button id="deleteRowBtn" class="btn" type="button">➖ Delete Player</button>
+                    <button id="addRowBtn" class="btn" type="button">➕ Add</button>
+                    <button id="deleteRowBtn" class="btn" type="button">➖ Delete</button>
                     <button id="clearBtn" class="btn" type="button">🧹 Clear</button>
+                    <div class="spacer"></div>
+                    <div class="boards-container">
+                      <label class="boards-label" for="boardsInput">Boards</label>
+                      <select id="boardsInput" class="boards-input num-input">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                      </select>
+                    </div>
                   </div>
                 </th>
               </tr>
               <tr>
                 <th>Name</th>
+                <th aria-label="empty"></th>
+                <th aria-label="empty"></th>
+                <th aria-label="empty"></th>
                 <th>Bet</th>
-                <th>Pot Won</th>
+                <th>Won</th>
               </tr>
             </thead>
             <tbody id="rows"></tbody>
@@ -221,8 +180,11 @@
             <tfoot>
               <tr>
                 <th>Total</th>
-                <th id="totalBet" style="text-align: right; font-variant-numeric: tabular-nums;">0.00</th>
-                <th id="totalWon" style="text-align: right; font-variant-numeric: tabular-nums;">0.00</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th id="totalBet" class="payout">0.00</th>
+                <th id="totalWon" class="payout">0.00</th>
               </tr>
             </tfoot>
           </table>
@@ -231,15 +193,13 @@
 
       <div class="pots-display" id="potsDisplay" style="display: none;">
         <h3>Pot Breakdown</h3>
-        <div id="potsList"></div>
+        <div id="potsContainer"></div>
       </div>
 
     </div>
   </div>
 
-  <footer>
-    Version 1.3.0
-  </footer>
+  <footer></footer>
 
   <script>
     (function(){
@@ -250,9 +210,12 @@
       const addRowBtn = document.getElementById('addRowBtn');
       const deleteRowBtn = document.getElementById('deleteRowBtn');
       const clearBtn = document.getElementById('clearBtn');
+      const boardsInput = document.getElementById('boardsInput');
       const totalBetEl = document.getElementById('totalBet');
       const potsDisplay = document.getElementById('potsDisplay');
-      const potsList = document.getElementById('potsList');
+      const potsContainer = document.getElementById('potsContainer');
+      const statusEl = document.getElementById('balanceStatus');
+      const statusText = statusEl ? statusEl.querySelector('.status-text') : null;
 
       function fmt(n){ return (Math.round(n*100)/100).toFixed(2).replace('-0.00','0.00'); }
       function parseNum(v){
@@ -274,6 +237,47 @@
         i.classList.toggle('invalid',!ok);
       }
 
+      function createInitialPotRow(betDef=''){
+        const tr=document.createElement('tr');
+        tr.className='initial-pot-row';
+
+        // Name cell - fixed text, not editable
+        const nameTd=document.createElement('td');
+        nameTd.textContent='Initial Pot';
+        nameTd.style.fontWeight='500';
+        tr.appendChild(nameTd);
+
+        // Empty cells (columns 2-4)
+        for(let i=0; i<3; i++){
+          const empty=document.createElement('td');
+          empty.className='empty-cell';
+          tr.appendChild(empty);
+        }
+
+        // Bet cell
+        const betCell=createCellWithInput('num-input','0.00',{inputmode:'decimal',enterkeyhint:'next',pattern:"[0-9.,\\- ]*"}, betDef);
+        tr.appendChild(betCell.td);
+
+        // Won cell - always empty for initial pot
+        const wonTd=document.createElement('td');
+        wonTd.className='payout';
+        wonTd.textContent='—';
+        tr.appendChild(wonTd);
+
+        // Add change handlers
+        const updateZeroClass = () => {
+          const val = parseNum(betCell.inp.value);
+          betCell.inp.classList.toggle('zero-value', val === 0);
+        };
+        const onChange=()=>{ validateInput(betCell.inp); updateZeroClass(); recalc(); save(); };
+        betCell.inp.addEventListener('input',onChange);
+        betCell.inp.addEventListener('blur',onChange);
+        updateZeroClass();
+
+        tr._refs={bet:betCell.inp, isInitialPot: true};
+        return tr;
+      }
+
       function createCellWithInput(cls,ph,opts={},def=''){
         const td=document.createElement('td');
         const inp=document.createElement('input');
@@ -293,28 +297,49 @@
       }
 
       function attachFieldHandlers(nameInp, betInp){
-        const onChange=()=>{ validateInput(betInp); recalc(); save(); };
+        const updateZeroClass = () => {
+          const val = parseNum(betInp.value);
+          betInp.classList.toggle('zero-value', val === 0);
+        };
+        const onChange=()=>{ validateInput(betInp); updateZeroClass(); recalc(); save(); };
         betInp.addEventListener('input', onChange);
+        betInp.addEventListener('blur', updateZeroClass);
+        nameInp.addEventListener('input', ()=>{ recalc(); save(); }); // Recalc when name changes
+        updateZeroClass(); // Initial check
         for(const el of [nameInp,betInp]){
           el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); focusNext(e.currentTarget); } });
-          el.addEventListener('input', save);
         }
       }
 
       function createRow(values){
         const tr=document.createElement('tr');
         const nameDef = values?.name ?? '';
-        const betDef  = values?.bet ?? '0.00';
+        const betDef  = values?.bet ?? '';
 
-        // Name cell
+        // Name cell (column 1)
         const nameCell=createCellWithInput('name-input','Player',{inputmode:'text',enterkeyhint:'next'}, nameDef);
         tr.appendChild(nameCell.td);
 
-        // Bet cell
+        // Empty cell (column 2)
+        const empty1 = document.createElement('td');
+        empty1.className = 'empty-cell';
+        tr.appendChild(empty1);
+
+        // Empty cell (column 3)
+        const empty2 = document.createElement('td');
+        empty2.className = 'empty-cell';
+        tr.appendChild(empty2);
+
+        // Empty cell (column 4)
+        const empty3 = document.createElement('td');
+        empty3.className = 'empty-cell';
+        tr.appendChild(empty3);
+
+        // Bet cell (column 5)
         const betCell=createCellWithInput('num-input','0.00',{inputmode:'decimal',enterkeyhint:'next',pattern:"[0-9.,\\- ]*"}, betDef);
         tr.appendChild(betCell.td);
 
-        // Pot Won cell (display only, calculated by the algorithm)
+        // Pot Won cell (column 6 - display only, calculated by the algorithm)
         const wonTd = document.createElement('td');
         wonTd.className = 'payout';
         wonTd.textContent = '0.00';
@@ -329,7 +354,15 @@
 
       function calculateSidePots(){
         const rows=[];
+        let initialPot = 0;
+
         for(const tr of rowsTbody.children){
+          // Skip initial pot row in player list
+          if(tr._refs.isInitialPot){
+            initialPot = parseNum(tr._refs.bet.value);
+            continue;
+          }
+
           const name = tr._refs.name.value.trim() || '(no name)';
           const bet = parseNum(tr._refs.bet.value);
           if(bet > 0){
@@ -353,7 +386,14 @@
             const potPlayers = rows.slice(i).map(p=>p.name);
             const potEligibleRows = rows.slice(i).map(p=>p.tr);
             const potName = pots.length === 0 ? 'Main Pot' : `Side Pot ${pots.length}`;
-            pots.push({name: potName, size: potSize, players: potPlayers, eligibleRows: potEligibleRows, winners: []});
+
+            // Add initial pot to Main Pot only
+            let finalPotSize = potSize;
+            if(pots.length === 0 && initialPot > 0){
+              finalPotSize += initialPot;
+            }
+
+            pots.push({name: potName, size: finalPotSize, players: potPlayers, eligibleRows: potEligibleRows, winners: []});
           }
           remainingPlayers--;
           prevBet = currentBet;
@@ -368,58 +408,134 @@
           return;
         }
 
+        const numBoards = Math.max(1, Math.min(2, parseInt(boardsInput.value) || 1));
         potsDisplay.style.display='block';
-        potsList.innerHTML='';
 
-        for(let potIdx = 0; potIdx < pots.length; potIdx++){
-          const pot = pots[potIdx];
-          const potDiv = document.createElement('div');
-          potDiv.className = 'pot-item' + (pot.name.includes('Side') ? ' side-pot' : '');
+        // Save checked state before clearing (only for multi-player pots)
+        const checkedState = new Map();
+        const existingCheckboxes = potsContainer.querySelectorAll('input[type="checkbox"]');
 
-          const potHeader = document.createElement('div');
-          potHeader.className = 'pot-header';
-          potHeader.innerHTML = `<div class="pot-name">${pot.name}</div><div class="pot-amount">${fmt(pot.size)}</div>`;
-
-          const potDetails = document.createElement('div');
-          potDetails.className = 'pot-details';
-
-          // Winner selection section
-          const winnersSection = document.createElement('div');
-          winnersSection.className = 'pot-section';
-          winnersSection.innerHTML = '<div class="pot-section-title">Winner(s)</div>';
-          const winnersDiv = document.createElement('div');
-          winnersDiv.className = 'pot-winners';
-
-          for(let i = 0; i < pot.players.length; i++){
-            const playerName = pot.players[i];
-            const checkboxId = `pot-${potIdx}-winner-${i}`;
-
-            const label = document.createElement('label');
-            label.className = 'winner-checkbox';
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = checkboxId;
-            checkbox.dataset.potIdx = potIdx;
-            checkbox.dataset.playerIdx = i;
-            checkbox.addEventListener('change', ()=> { calculateWinnings(pots); save(); });
-
-            const labelText = document.createElement('label');
-            labelText.htmlFor = checkboxId;
-            labelText.textContent = playerName;
-
-            label.appendChild(checkbox);
-            label.appendChild(labelText);
-            winnersDiv.appendChild(label);
-          }
-          winnersSection.appendChild(winnersDiv);
-
-          potDetails.appendChild(winnersSection);
-
-          potDiv.appendChild(potHeader);
-          potDiv.appendChild(potDetails);
-          potsList.appendChild(potDiv);
+        // First, count players per pot
+        const potPlayerCounts = new Map();
+        for(const cb of existingCheckboxes){
+          const potKey = `${cb.dataset.potIdx}-${cb.dataset.boardNum}`;
+          potPlayerCounts.set(potKey, (potPlayerCounts.get(potKey) || 0) + 1);
         }
+
+        // Only save state for multi-player pots
+        for(const cb of existingCheckboxes){
+          const potKey = `${cb.dataset.potIdx}-${cb.dataset.boardNum}`;
+          const playerCount = potPlayerCounts.get(potKey) || 0;
+
+          // Only save checked state if the pot has multiple players
+          if(playerCount > 1){
+            const key = `${cb.dataset.potIdx}-${cb.dataset.boardNum}-${cb.dataset.playerName}`;
+            checkedState.set(key, cb.checked);
+          }
+        }
+
+        potsContainer.innerHTML='';
+
+        if(numBoards === 1){
+          // Single board - original layout
+          const potsList = document.createElement('div');
+          for(let potIdx = 0; potIdx < pots.length; potIdx++){
+            potsList.appendChild(createPotItem(pots[potIdx], potIdx, 0, pots, checkedState));
+          }
+          potsContainer.appendChild(potsList);
+        } else {
+          // Two boards - split layout
+          const boardsGrid = document.createElement('div');
+          boardsGrid.className = 'boards-grid';
+
+          for(let boardNum = 0; boardNum < 2; boardNum++){
+            const boardColumn = document.createElement('div');
+            boardColumn.className = 'board-column';
+
+            const boardTitle = document.createElement('div');
+            boardTitle.className = 'board-title';
+            boardTitle.textContent = `Board ${boardNum + 1}`;
+            boardColumn.appendChild(boardTitle);
+
+            for(let potIdx = 0; potIdx < pots.length; potIdx++){
+              boardColumn.appendChild(createPotItem(pots[potIdx], potIdx, boardNum, pots, checkedState));
+            }
+
+            boardsGrid.appendChild(boardColumn);
+          }
+          potsContainer.appendChild(boardsGrid);
+        }
+      }
+
+      function createPotItem(pot, potIdx, boardNum, allPots, checkedState){
+        const numBoards = Math.max(1, Math.min(2, parseInt(boardsInput.value) || 1));
+        const potSize = pot.size / numBoards;
+
+        const potDiv = document.createElement('div');
+        potDiv.className = 'pot-item' + (pot.name.includes('Side') ? ' side-pot' : '');
+
+        const potHeader = document.createElement('div');
+        potHeader.className = 'pot-header';
+        potHeader.innerHTML = `<div class="pot-name">${pot.name}</div><div class="pot-amount">${fmt(potSize)}</div>`;
+
+        const potDetails = document.createElement('div');
+        potDetails.className = 'pot-details';
+
+        // Winner selection section
+        const winnersSection = document.createElement('div');
+        winnersSection.className = 'pot-section';
+        const winnersDiv = document.createElement('div');
+        winnersDiv.className = 'pot-winners';
+
+        for(let i = 0; i < pot.players.length; i++){
+          const playerName = pot.players[i];
+          const checkboxId = `pot-${potIdx}-board-${boardNum}-winner-${i}`;
+
+          const label = document.createElement('label');
+          label.className = 'winner-checkbox';
+
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.id = checkboxId;
+          checkbox.dataset.potIdx = potIdx;
+          checkbox.dataset.boardNum = boardNum;
+          checkbox.dataset.playerIdx = i;
+          checkbox.dataset.playerName = playerName;
+
+          // Auto-check if only one player in this pot, otherwise restore saved state
+          const stateKey = `${potIdx}-${boardNum}-${playerName}`;
+          if(pot.players.length === 1){
+            checkbox.checked = true;
+          } else if(checkedState && checkedState.has(stateKey)){
+            // Only restore saved state for multi-player pots
+            checkbox.checked = checkedState.get(stateKey);
+          } else {
+            // Default to unchecked for multi-player pots with no saved state
+            checkbox.checked = false;
+          }
+
+          checkbox.addEventListener('change', (e)=> {
+            handleWinnerCheckboxChange(e.target, allPots);
+            recalc();
+            save();
+          });
+
+          const labelText = document.createElement('label');
+          labelText.htmlFor = checkboxId;
+          labelText.textContent = playerName;
+
+          label.appendChild(checkbox);
+          label.appendChild(labelText);
+          winnersDiv.appendChild(label);
+        }
+        winnersSection.appendChild(winnersDiv);
+
+        potDetails.appendChild(winnersSection);
+
+        potDiv.appendChild(potHeader);
+        potDiv.appendChild(potDetails);
+
+        return potDiv;
       }
 
       function addRow(values){
@@ -429,14 +545,17 @@
       }
 
       function deleteRow(){
-        if(rowsTbody.children.length>0){
+        // Don't delete if only initial pot row remains, or if last row is initial pot
+        if(rowsTbody.children.length>1 && !rowsTbody.lastElementChild._refs.isInitialPot){
           rowsTbody.removeChild(rowsTbody.lastElementChild);
           recalc(); save();
         }
       }
 
       function clearTable(){
+        const initialPotValue = rowsTbody.children[0]._refs.bet.value;
         rowsTbody.innerHTML='';
+        rowsTbody.appendChild(createInitialPotRow(''));
         for(let i=0;i<2;i++) addRow();
         (function(){ var first = rowsTbody.querySelector('.name-input'); if (first) first.focus(); })();
         recalc();
@@ -445,13 +564,23 @@
 
       function serialize(){
         const rows=[];
+        let initialPot = '0';
+
         for(const tr of rowsTbody.children){
-          rows.push({
-            name: tr._refs.name.value,
-            bet: tr._refs.bet.value
-          });
+          if(tr._refs.isInitialPot){
+            initialPot = tr._refs.bet.value;
+          } else {
+            rows.push({
+              name: tr._refs.name.value,
+              bet: tr._refs.bet.value
+            });
+          }
         }
-        return { rows };
+        return {
+          rows,
+          boards: boardsInput ? boardsInput.value : '1',
+          initialPot
+        };
       }
 
       function save(){
@@ -466,38 +595,74 @@
           const data = JSON.parse(raw);
           if(!data || !Array.isArray(data.rows)) return false;
           rowsTbody.innerHTML='';
-          for(const r of data.rows){ addRow({ name: r.name ?? '', bet: r.bet ?? '0.00' }); }
+          // restore boards if present
+          if(boardsInput && data.boards) boardsInput.value = data.boards;
+          // restore initial pot row first
+          rowsTbody.appendChild(createInitialPotRow(data.initialPot || ''));
+          for(const r of data.rows){ addRow({ name: r.name ?? '', bet: r.bet ?? '' }); }
           recalc();
           return true;
         } catch(e){ return false; }
       }
 
+      function handleWinnerCheckboxChange(checkbox, allPots){
+        // When a checkbox is checked/unchecked in a pot, automatically check/uncheck the same player in all subsequent pots on the same board
+        const currentPotIdx = parseInt(checkbox.dataset.potIdx);
+        const boardNum = parseInt(checkbox.dataset.boardNum);
+        const playerName = checkbox.dataset.playerName;
+        const isChecked = checkbox.checked;
+
+        // Find all subsequent pots (higher index) on the same board
+        for(let potIdx = currentPotIdx + 1; potIdx < allPots.length; potIdx++){
+          const pot = allPots[potIdx];
+
+          // Check if this player is eligible for this pot
+          if(pot.players.includes(playerName)){
+            // Find and update the checkbox for this player in this pot on this board
+            const targetCheckbox = potsContainer.querySelector(
+              `input[data-pot-idx="${potIdx}"][data-board-num="${boardNum}"][data-player-name="${playerName}"]`
+            );
+            if(targetCheckbox){
+              targetCheckbox.checked = isChecked;
+            }
+          }
+        }
+      }
+
       function calculateWinnings(pots){
+        const numBoards = Math.max(1, Math.min(2, parseInt(boardsInput.value) || 1));
+
         // Reset all pot won amounts
         for(const tr of rowsTbody.children){
+          if(tr._refs.isInitialPot) continue;
           tr._refs.wonTd.textContent = '0.00';
         }
 
-        // For each pot, find checked winners and distribute pot amount
+        // For each pot and each board, find checked winners and distribute pot amount
         for(let potIdx = 0; potIdx < pots.length; potIdx++){
           const pot = pots[potIdx];
-          const checkedWinners = [];
+          const potSizePerBoard = pot.size / numBoards;
 
-          // Find all checked winner checkboxes for this pot
-          const potCheckboxes = potsList.querySelectorAll(`input[data-pot-idx="${potIdx}"]:checked`);
-          for(const cb of potCheckboxes){
-            const playerIdx = parseInt(cb.dataset.playerIdx);
-            checkedWinners.push(pot.players[playerIdx]);
-          }
+          for(let boardNum = 0; boardNum < numBoards; boardNum++){
+            const checkedWinners = [];
 
-          // If there are winners, distribute the pot among them equally
-          if(checkedWinners.length > 0){
-            const winPerWinner = pot.size / checkedWinners.length;
-            for(const tr of rowsTbody.children){
-              const playerName = tr._refs.name.value.trim();
-              if(checkedWinners.includes(playerName)){
-                const currentWon = parseNum(tr._refs.wonTd.textContent);
-                tr._refs.wonTd.textContent = fmt(currentWon + winPerWinner);
+            // Find all checked winner checkboxes for this pot and board
+            const potCheckboxes = potsContainer.querySelectorAll(`input[data-pot-idx="${potIdx}"][data-board-num="${boardNum}"]:checked`);
+            for(const cb of potCheckboxes){
+              const playerIdx = parseInt(cb.dataset.playerIdx);
+              checkedWinners.push(pot.players[playerIdx]);
+            }
+
+            // If there are winners, distribute the pot among them equally
+            if(checkedWinners.length > 0){
+              const winPerWinner = potSizePerBoard / checkedWinners.length;
+              for(const tr of rowsTbody.children){
+                if(tr._refs.isInitialPot) continue;
+                const playerName = tr._refs.name.value.trim();
+                if(checkedWinners.includes(playerName)){
+                  const currentWon = parseNum(tr._refs.wonTd.textContent);
+                  tr._refs.wonTd.textContent = fmt(currentWon + winPerWinner);
+                }
               }
             }
           }
@@ -506,9 +671,11 @@
         // Update total pot won
         let totalWon = 0;
         for(const tr of rowsTbody.children){
+          if(tr._refs.isInitialPot) continue;
           totalWon += parseNum(tr._refs.wonTd.textContent);
         }
         document.getElementById('totalWon').textContent = fmt(totalWon);
+        return totalWon;
       }
 
       function recalc(){
@@ -522,46 +689,51 @@
 
         const pots = calculateSidePots();
         displayPots(pots);
-        calculateWinnings(pots);
+        const totalWon = calculateWinnings(pots);
+
+        // Update balance status
+        if(statusEl && statusText){
+          const balanced = Math.abs(Math.round((totalWon - totalBet)*100)) === 0;
+          statusEl.classList.toggle('ok', balanced);
+          statusEl.classList.toggle('warn', !balanced);
+          statusText.textContent = balanced ? 'Balanced' : 'Unbalanced';
+        }
       }
 
       // init
-      if(!restore()){
+      // Check for transferred names from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const transferredNames = urlParams.get('names');
+
+      if(transferredNames && !restore()){
+        // If names were transferred, create rows with those names
+        const names = transferredNames.split(',').filter(n => n.trim());
+        rowsTbody.innerHTML='';
+        rowsTbody.appendChild(createInitialPotRow(''));
+        if(names.length > 0){
+          for(const name of names){
+            addRow({ name: name.trim(), bet: '' });
+          }
+        } else {
+          for(let i=0;i<2;i++) addRow();
+        }
+      } else if(!restore()){
+        rowsTbody.appendChild(createInitialPotRow(''));
         for(let i=0;i<2;i++) addRow();
       }
+
       addRowBtn.addEventListener('click',()=>{const tr=addRow(); if(tr) tr._refs.name.focus();});
       deleteRowBtn.addEventListener('click',deleteRow);
       clearBtn.addEventListener('click',clearTable);
+      if(boardsInput){
+        boardsInput.addEventListener('change', ()=>{
+          recalc(); save();
+        });
+      }
+
       recalc();
     })();
-
-    // --- Single-file icon generator (PNG) for home-screen shortcuts ---
-    (function(){
-      function makeIcon(size){
-        const c=document.createElement('canvas'); c.width=c.height=size; const ctx=c.getContext('2d');
-        ctx.fillStyle='#0b1020';
-        const r=size*0.18;
-        const w=size, h=size; ctx.beginPath();
-        ctx.moveTo(r,0); ctx.arcTo(w,0,w,r,r); ctx.arcTo(w,h,w-r,h,r); ctx.arcTo(0,h,0,h-r,r); ctx.arcTo(0,0,r,0,r); ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle='#10b981';
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.font = `${Math.floor(size*0.7)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
-        ctx.fillText('♠', size/2, size/2 + size*0.02);
-        return c.toDataURL('image/png');
-      }
-      try{
-        const icon192 = makeIcon(192);
-        const icon512 = makeIcon(512);
-        const l1 = document.createElement('link');
-        l1.rel = 'apple-touch-icon'; l1.sizes = '192x192'; l1.href = icon192; document.head.appendChild(l1);
-        const l2 = document.createElement('link');
-        l2.rel = 'apple-touch-icon'; l2.sizes = '512x512'; l2.href = icon512; document.head.appendChild(l2);
-        const linkPng = document.createElement('link');
-        linkPng.rel='icon'; linkPng.type='image/png'; linkPng.sizes='192x192'; linkPng.href=icon192;
-        document.head.appendChild(linkPng);
-      }catch(e){ /* ignore */ }
-    })();
   </script>
+  <script src="shared-icons.js"></script>
 </body>
 </html>

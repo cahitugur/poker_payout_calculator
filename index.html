@@ -1,3 +1,4 @@
+
 <!--
   Copyright (c) 2025 Cahit Ugur
   SPDX-License-Identifier: MIT
@@ -6,9 +7,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-w  <footer>
-    Version 1.3.0
-  </footer>h, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Poker Payout Calculator</title>
   <!-- Favicon: green spade icon (SVG for tabs); PNG touch icon will be generated at runtime -->
   <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" ry="12" fill="%230b1020"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="44" font-family="system-ui,Segoe UI,Roboto,Helvetica,Arial" fill="%2310b981">♠</text></svg>'/>
@@ -16,155 +15,68 @@
   <!-- Single-file shortcut support (best-effort): iOS/Android home-screen shortcuts look for apple-touch-icon -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="stylesheet" href="shared-styles.css" />
   <style>
-    :root {
-      --bg: #0f172a;
-      --panel: #111827;
-      --muted: #94a3b8;
-      --text: #e2e8f0;
-      --accent: #22d3ee;
-      --ok: #10b981;
-      --warn: #ef4444;
-      --outline: #1f2937;
-    }
-
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-      background-color: var(--bg); background: radial-gradient(1200px 700px at 80% -10%, #0b122a 0%, var(--bg) 60%);
-      color: var(--text);
-      -webkit-text-size-adjust: 100%;
-    }
-
-    .wrap { max-width: 1100px; margin: 40px auto; padding: 0 16px; }
-    h1 { font-weight: 800; margin: 0 0 18px; text-align: center; }
-
-    .card {
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-      border: 1px solid var(--outline);
-      border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-
-    .toolbar { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--outline); }
-
-    .btn {
-      appearance: none; border: 1px solid var(--outline); background: #0b1020; color: var(--text);
-      padding: 8px 8px; border-radius: 6px; cursor: pointer; font-weight: 600;
-      transition: transform .06s ease, background .2s ease, border-color .2s ease;
-    }
-    .btn:hover { background: #0e1530; }
-    .btn:active { transform: translateY(1px); }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
-
-    .nav-link {
-      appearance: none; border: none; background: transparent; color: var(--accent); cursor: pointer;
-      font-weight: 600; font-size: 14px; padding: 0; text-decoration: underline;
-      transition: color .2s ease;
-    }
-    .nav-link:hover { color: var(--text); }
-
-    .status { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
-    .dot { width: 12px; height: 12px; border-radius: 999px; display: inline-block; }
-    .ok  { color: var(--ok); }
-    .ok .dot { background: var(--ok); }
-    .warn  { color: var(--warn); }
-    .warn .dot { background: var(--warn); }
-
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    /* Ensure numeric columns are wide enough to show ~6 digits + decimal/fraction reliably.
-    Using ch units (width of '0') gives a predictable width for tabular numbers. */
+    /* Page-specific styles for index.html */
     col.col-name { width: auto; }
-    col.col-in, col.col-out { width: 7ch; min-width: 7ch; }
-    col.col-payout { width: 10ch; min-width: 8ch; }
-    col.col-step { width: 3ch; }
-    /* Right-align numeric headers for better alignment with cells */
-    /* Right-align numeric columns: In is now third column, Out fifth, Payout sixth */
-    thead th:nth-child(3), thead th:nth-child(5), thead th:nth-child(6) { text-align: right; }
-    thead th { text-align: left; font-size: 14px; color: var(--muted); padding: 8px 6px; background: #0b1020; }
-    tbody td, tfoot th { padding: 6px 0px; border-top: 1px solid var(--outline); }
-    tfoot th {background: #0b1020; font-weight: 800; text-align: right; }
+    col.col-in, col.col-out, col.col-payout { width: 10ch; min-width: 10ch; }
+    col.col-step { width: 24px; min-width: 24px; }
+    /* Center-align numeric columns: In is third column, Out fifth, Payout sixth */
+    thead th:nth-child(3), thead th:nth-child(5), thead th:nth-child(6) { text-align: center; }
+    tbody td:nth-child(3), tbody td:nth-child(5) { text-align: center; }
+    /* Payout column (6th) - values aligned right */
+    tbody td:nth-child(6) { text-align: right; }
+    tfoot th { text-align: right; }
 
-    .name-input, .num-input {
-      width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--outline); background: #0c1328; color: var(--text); outline: none;
-    }
     .name-input { width: calc(100%); }
-    .num-input { padding: 6px 4px; text-align: right; font-variant-numeric: tabular-nums; }
-    .buyin-label { color: var(--muted); font-weight: 700; margin-left: 8px; margin-right: 6px; align-self: center; }
-    .buyin-input { width: 9ch; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--outline); background: #0c1328; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
-    /* Step buttons live in their own small columns; center them and make them inline elements so they don't overlap inputs */
-    .step-cell { text-align: center; vertical-align: middle; }
+    .name-cell-wrapper { display: flex; align-items: center; gap: 8px; }
+    .name-cell-wrapper .name-input { flex: 1; }
+    .name-cell-wrapper input[type="checkbox"] { flex-shrink: 0; cursor: pointer; accent-color: var(--ok); }
+    .name-cell-wrapper input[type="checkbox"]:not(:checked) { opacity: 0.5; }
+    .name-cell-wrapper.hidden-checkboxes input[type="checkbox"] { display: none; }
+    .name-header { display: flex; align-items: center; justify-content: space-between; }
+    .name-header input[type="checkbox"] { cursor: pointer; margin-left: 8px; }
+    .player-chip { display: inline-block; padding: 6px 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--ok); border-radius: 6px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s; }
+    .player-chip:hover { background: rgba(16, 185, 129, 0.25); transform: translateY(-1px); }
+    .player-chip:active { transform: translateY(0); }
+    .num-input { padding: 6px 4px; }
+    .num-input.zero-value { color: var(--muted) !important; }
+
+    /* Step buttons live in their own small columns; align right and middle */
+    .step-cell { vertical-align: middle; padding-left: 0 !important; padding-right: 0 !important; }
+    .step-cell.minus-cell { text-align: right; }
+    .step-cell.plus-cell { text-align: left; }
     .step-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 16px; height: 14px; padding: 0px; border-radius: 4px; border: 1px solid var(--outline);
-      cursor: pointer; font-weight: 800; color: white; font-size: 14px; background: transparent;
+      width: 20px; height: 20px; padding: 0px; border-radius: 50%; border: 1px solid var(--outline);
+      cursor: pointer; font-weight: 800; color: white; font-size: 12px; background: transparent;
     }
     /* push minus rightward and plus leftward by adding external margins */
-    .step-btn.minus { background: var(--warn); border-color: rgba(0,0,0,0.2); margin-left: 16px; }
-    .step-btn.plus { background: var(--ok); border-color: rgba(0,0,0,0.2); margin-right: 16px; }
+    .step-btn.minus { background: var(--warn); border-color: rgba(0,0,0,0.2); margin-right: 0px; }
+    .step-btn.plus { background: var(--ok); border-color: rgba(0,0,0,0.2); margin-left: 0px; }
     .step-btn:active { transform: translateY(1px); }
-    .num-input.invalid { border-color: var(--warn); }
-    .payout { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
-
-    .controls-cell { padding: 10px; border-top: 1px solid var(--outline); background: #0b1020; }
-    .controls { display: flex; gap: 10px; align-items: center; }
-    .controls .spacer { flex: 1; }
-
-    footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 0; }
 
     /* Mobile-friendly responsive design */
     @media (max-width: 768px) {
-      .wrap { padding: 0 12px; margin: 20px auto; }
-      h1 { font-size: 24px; margin: 0 0 12px; }
-
-      .toolbar { padding: 8px 10px; gap: 6px; }
-      .nav-link { font-size: 12px; }
-
-      .controls { flex-wrap: wrap; }
-      .btn { padding: 10px 12px; font-size: 13px; border-radius: 4px; }
-
-      table { font-size: 13px; }
       col.col-name { width: 35%; }
-      col.col-in, col.col-out { width: 9ch; min-width: 9ch; }
-      col.col-payout { width: 10ch; min-width: 10ch; }
-      col.col-step { width: 2.5ch; }
+      col.col-in, col.col-out, col.col-payout { width: 10ch; min-width: 10ch; }
+      col.col-step { width: 22px; min-width: 22px; }
       thead th, tbody td, tfoot th { padding: 6px 4px; }
 
-      .name-input, .num-input { padding: 8px 6px; font-size: 13px; min-height: 40px; }
-      .buyin-input { width: 8ch; padding: 6px 6px; font-size: 13px; }
-
-      .step-btn { width: 14px; height: 12px; font-size: 12px; }
-      .step-btn.minus { margin-left: 12px; }
-      .step-btn.plus { margin-right: 12px; }
-
-      footer { padding: 12px 0; font-size: 11px; }
+      .step-btn { width: 18px; height: 18px; font-size: 11px; }
+      .step-btn.minus { margin-right: 0px; }
+      .step-btn.plus { margin-left: 0px; }
     }
 
     @media (max-width: 480px) {
-      .wrap { margin: 16px auto; padding: 0 8px; }
-      h1 { font-size: 20px; margin: 0 0 10px; }
-
-      .toolbar { padding: 6px 8px; gap: 4px; }
-      .nav-link { font-size: 11px; }
-
-      .btn { padding: 8px 10px; font-size: 12px; }
-
-      table { font-size: 12px; }
       col.col-name { width: 40%; }
-      col.col-in, col.col-out { width: 8.5ch; min-width: 8.5ch; }
-      col.col-payout { width: 9ch; min-width: 9ch; }
-      col.col-step { width: 2ch; }
+      col.col-in, col.col-out, col.col-payout { width: 8ch; min-width: 8ch; }
+      col.col-step { width: 20px; min-width: 20px; }
       thead th, tbody td, tfoot th { padding: 5px 3px; }
 
-      .name-input, .num-input { padding: 6px 4px; font-size: 12px; min-height: 36px; }
-      .buyin-input { width: 7ch; padding: 6px 4px; font-size: 12px; }
-
-      .step-btn { width: 12px; height: 10px; font-size: 10px; }
-      .step-btn.minus { margin-left: 8px; }
-      .step-btn.plus { margin-right: 8px; }
-
-      footer { padding: 10px 0; font-size: 10px; }
+      .step-btn { width: 16px; height: 16px; font-size: 10px; }
+      .step-btn.minus { margin-right: 0px; }
+      .step-btn.plus { margin-left: 0px; }
     }
   </style>
 </head>
@@ -183,8 +95,8 @@
           <span class="dot"></span>
           <span class="status-text">Unbalanced</span>
         </div>
-        <span style="flex: 1;"></span>
-        <a href="side-pot-calculator.html" class="nav-link">Side Pot Calculator →</a>
+        <span class="spacer" style="flex: 1;"></span>
+        <a href="side-pot-calculator.html" id="spcLink" class="nav-link">Side Pot Calculator →</a>
       </div>
 
       <div class="table-wrap">
@@ -192,9 +104,9 @@
           <table>
             <colgroup>
               <col class="col-name">
-              <col class="col-step" style="width:4ch">
+              <col class="col-step">
               <col class="col-in">
-              <col class="col-step" style="width:4ch">
+              <col class="col-step">
               <col class="col-out">
               <col class="col-payout">
             </colgroup>
@@ -202,12 +114,14 @@
               <tr>
                 <th class="controls-cell" colspan="6">
                   <div class="controls">
-                    <button id="addRowBtn" class="btn" type="button">➕ Add Player</button>
-                    <button id="deleteRowBtn" class="btn" type="button">➖ Delete Player</button>
+                    <button id="addRowBtn" class="btn" type="button">➕ Add</button>
+                    <button id="deleteRowBtn" class="btn" type="button">➖ Delete</button>
                     <button id="clearBtn" class="btn" type="button">🧹 Clear</button>
-                    <span class="spacer"></span>
-                    <label class="buyin-label" for="buyInInput">Buy-In</label>
-                    <input id="buyInInput" class="buyin-input num-input" type="text" inputmode="decimal" value="30.00" />
+                    <div class="spacer"></div>
+                    <div class="buyin-container">
+                      <label class="buyin-label" for="buyInInput">Buy-In</label>
+                      <input id="buyInInput" class="buyin-input num-input" type="text" inputmode="decimal" value="30.00" />
+                    </div>
                   </div>
                 </th>
               </tr>
@@ -236,24 +150,29 @@
         </form>
       </div>
 
+      <div style="margin-top: 16px; text-align: center;">
+        <button id="usualSuspectsBtn" class="btn" type="button" style="padding: 8px 16px;">👥 Usual Suspects</button>
+        <button id="settleBtn" class="btn" type="button" style="padding: 8px 16px; margin-left: 8px;">✔ Settle</button>
+        <div id="usualSuspectsList" style="margin-top: 12px; display: none; flex-wrap: wrap; gap: 8px; justify-content: center;"></div>
+      </div>
 
     </div>
   </div>
 
-  <footer>
-    Version 1.2.0
-  </footer>
+  <footer></footer>
 
   <script>
     (function(){
       const MAX_ROWS = 32;
       const STORAGE_KEY = 'poker-payout:v1';
+      const USUAL_SUSPECTS = ['Brian', 'Cahit', 'Colm', 'Cormac', 'Dillon', 'Euan', 'Evangelia', 'Ferhat', 'Hannan', 'James', 'Kevin', 'Kunal', 'Liam', 'Marcus', 'Mic', 'Muireann', 'Otto', 'Pawel', 'Scott', 'Tuhin'];
 
-  const rowsTbody = document.getElementById('rows');
-  const addRowBtn = document.getElementById('addRowBtn');
-  const deleteRowBtn = document.getElementById('deleteRowBtn');
-  const clearBtn = document.getElementById('clearBtn');
-  const buyInInput = document.getElementById('buyInInput');
+      const rowsTbody = document.getElementById('rows');
+      const addRowBtn = document.getElementById('addRowBtn');
+      const deleteRowBtn = document.getElementById('deleteRowBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const usualSuspectsBtn = document.getElementById('usualSuspectsBtn');
+      const buyInInput = document.getElementById('buyInInput');
   const totalInEl = document.getElementById('totalIn');
       const totalOutEl = document.getElementById('totalOut');
       const totalPayoutEl = document.getElementById('totalPayout');
@@ -309,9 +228,18 @@
       }
 
       function attachFieldHandlers(nameInp, inInp, outInp){
-        const onChange=()=>{ validateInput(inInp); validateInput(outInp); recalc(); save(); };
+        const updateZeroClass = () => {
+          const inVal = parseNum(inInp.value);
+          const outVal = parseNum(outInp.value);
+          inInp.classList.toggle('zero-value', inVal === 0);
+          outInp.classList.toggle('zero-value', outVal === 0);
+        };
+        const onChange=()=>{ validateInput(inInp); validateInput(outInp); updateZeroClass(); recalc(); save(); };
         inInp.addEventListener('input', onChange);
         outInp.addEventListener('input', onChange);
+        inInp.addEventListener('blur', updateZeroClass);
+        outInp.addEventListener('blur', updateZeroClass);
+        updateZeroClass(); // Initial check
         for(const el of [nameInp,inInp,outInp]){
           el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); focusNext(e.currentTarget); } });
           el.addEventListener('input', save);
@@ -324,13 +252,25 @@
         // Default 'In' uses validated Buy-In value when available
         const inDef   = values?.in ?? (getBuyInVal() ?? '30');
         const outDef  = values?.out ?? '';
+        const settledDef = values?.settled ?? false;
 
-  // Name cell
+  // Name cell with checkbox
   const nameCell=createCellWithInput('name-input','Player',{inputmode:'text',enterkeyhint:'next'}, nameDef);
+  const wrapper = document.createElement('div');
+  wrapper.className = 'name-cell-wrapper hidden-checkboxes'; // Start with checkboxes hidden
+  wrapper.appendChild(nameCell.inp);
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = settledDef;
+  checkbox.title = 'Settled';
+  checkbox.addEventListener('change', save);
+  wrapper.appendChild(checkbox);
+  nameCell.td.innerHTML = '';
+  nameCell.td.appendChild(wrapper);
   tr.appendChild(nameCell.td);
 
   // Minus step cell
-  const stepMinusTd = document.createElement('td'); stepMinusTd.className='step-cell';
+  const stepMinusTd = document.createElement('td'); stepMinusTd.className='step-cell minus-cell';
   const minusBtn = document.createElement('button'); minusBtn.type='button'; minusBtn.className='step-btn minus'; minusBtn.textContent='−';
   minusBtn.title = 'Subtract buy-in'; minusBtn.setAttribute('aria-label', 'Subtract buy-in');
   stepMinusTd.appendChild(minusBtn); tr.appendChild(stepMinusTd);
@@ -340,7 +280,7 @@
   tr.appendChild(inCell.td);
 
   // Plus step cell
-  const stepPlusTd = document.createElement('td'); stepPlusTd.className='step-cell';
+  const stepPlusTd = document.createElement('td'); stepPlusTd.className='step-cell plus-cell';
   const plusBtn = document.createElement('button'); plusBtn.type='button'; plusBtn.className='step-btn plus'; plusBtn.textContent='+';
   plusBtn.title = 'Add buy-in'; plusBtn.setAttribute('aria-label', 'Add buy-in');
   stepPlusTd.appendChild(plusBtn); tr.appendChild(stepPlusTd);
@@ -368,7 +308,7 @@
         minusBtn.addEventListener('click', ()=> adjustIn(-1));
         plusBtn.addEventListener('click', ()=> adjustIn(1));
 
-        tr._refs={name:nameCell.inp,in:inCell.inp,out:outCell.inp,payout:payoutTd};
+        tr._refs={checkbox:checkbox,name:nameCell.inp,in:inCell.inp,out:outCell.inp,payout:payoutTd};
         return tr;
       }
 
@@ -396,6 +336,12 @@
         rowsTbody.innerHTML='';
         for(let i=0;i<2;i++) addRow();
         (function(){ var first = rowsTbody.querySelector('.name-input'); if (first) first.focus(); })();
+        // Reset available suspects list
+        availableSuspects = [...USUAL_SUSPECTS];
+        if(suspectsList && suspectsList.style.display === 'flex'){
+          const renderFn = window.renderSuspectsList;
+          if(renderFn) renderFn();
+        }
         recalc();
         localStorage.removeItem(STORAGE_KEY);
       }
@@ -406,7 +352,8 @@
           rows.push({
             name: tr._refs.name.value,
             in: tr._refs.in.value,
-            out: tr._refs.out.value
+            out: tr._refs.out.value,
+            settled: tr._refs.checkbox.checked
           });
         }
         return { rows };
@@ -426,7 +373,7 @@
           rowsTbody.innerHTML='';
           // restore buy-in if present
           if(buyInInput && data.buyIn) buyInInput.value = data.buyIn;
-          for(const r of data.rows){ addRow({ name: r.name ?? '', in: r.in ?? '', out: r.out ?? '' }); }
+          for(const r of data.rows){ addRow({ name: r.name ?? '', in: r.in ?? '', out: r.out ?? '', settled: r.settled ?? false }); }
           recalc();
           return true;
         } catch(e){ return false; }
@@ -458,6 +405,61 @@
       addRowBtn.addEventListener('click',()=>{const tr=addRow(); if(tr) tr._refs.name.focus();});
       deleteRowBtn.addEventListener('click',deleteRow);
       clearBtn.addEventListener('click',clearTable);
+
+      let availableSuspects = [...USUAL_SUSPECTS];
+      const suspectsList = document.getElementById('usualSuspectsList');
+
+      if(usualSuspectsBtn){
+        function renderSuspectsList(){
+          if(!suspectsList) return;
+          suspectsList.innerHTML = '';
+          for(const name of availableSuspects){
+            const chip = document.createElement('span');
+            chip.className = 'player-chip';
+            chip.textContent = name;
+            chip.addEventListener('click', ()=>{
+              // Check for empty row first
+              let emptyRow = null;
+              for(const tr of rowsTbody.children){
+                if(!tr._refs.name.value.trim()){
+                  emptyRow = tr;
+                  break;
+                }
+              }
+
+              if(emptyRow){
+                // Fill empty row
+                emptyRow._refs.name.value = name;
+                emptyRow._refs.name.focus();
+              } else {
+                // Add new row at bottom
+                const tr = addRow({name, in: '', out: ''});
+                if(tr) tr._refs.name.focus();
+              }
+
+              // Remove from available list
+              availableSuspects = availableSuspects.filter(n => n !== name);
+              renderSuspectsList();
+              recalc();
+              save();
+            });
+            suspectsList.appendChild(chip);
+          }
+        }
+
+        // Make renderSuspectsList accessible to clearTable
+        window.renderSuspectsList = renderSuspectsList;
+
+        usualSuspectsBtn.addEventListener('click', ()=>{
+          if(suspectsList.style.display === 'none' || suspectsList.style.display === ''){
+            suspectsList.style.display = 'flex';
+            renderSuspectsList();
+          } else {
+            suspectsList.style.display = 'none';
+          }
+        });
+      }
+
       if(buyInInput){
         buyInInput.addEventListener('input', ()=>{
           // validate buy-in
@@ -473,40 +475,55 @@
           save(); recalc();
         });
       }
+
+      // Transfer player names when navigating to SPC
+      const spcLink = document.getElementById('spcLink');
+      const settleBtn = document.getElementById('settleBtn');
+      let checkboxesVisible = false; // Default to hidden
+
+      if(settleBtn){
+        // Set initial button opacity
+        settleBtn.style.opacity = '0.5';
+
+        settleBtn.addEventListener('click', ()=>{
+          checkboxesVisible = !checkboxesVisible;
+          for(const tr of rowsTbody.children){
+            const wrapper = tr.querySelector('.name-cell-wrapper');
+            if(wrapper){
+              if(checkboxesVisible){
+                wrapper.classList.remove('hidden-checkboxes');
+              } else {
+                wrapper.classList.add('hidden-checkboxes');
+              }
+            }
+          }
+          // Update button style to show active state
+          if(checkboxesVisible){
+            settleBtn.style.opacity = '1';
+          } else {
+            settleBtn.style.opacity = '0.5';
+          }
+        });
+      }
+
+      if(spcLink){
+        spcLink.addEventListener('click', (e)=>{
+          e.preventDefault();
+          const names = [];
+          for(const tr of rowsTbody.children){
+            const name = tr._refs.name.value.trim();
+            if(name) names.push(name);
+          }
+          console.log('Transferring names:', names);
+          const params = new URLSearchParams();
+          if(names.length > 0) params.set('names', names.join(','));
+          window.location.href = 'side-pot-calculator.html' + (params.toString() ? '?' + params.toString() : '');
+        });
+      }
+
       recalc();
     })();
-
-    // --- Single-file icon generator (PNG) for home-screen shortcuts ---
-    (function(){
-      // Many platforms prefer PNG for home screen. We draw a green spade onto a dark rounded square.
-      function makeIcon(size){
-        const c=document.createElement('canvas'); c.width=c.height=size; const ctx=c.getContext('2d');
-        // background
-        ctx.fillStyle='#0b1020';
-        const r=size*0.18; // corner radius
-        const w=size, h=size; ctx.beginPath();
-        ctx.moveTo(r,0); ctx.arcTo(w,0,w,r,r); ctx.arcTo(w,h,w-r,h,r); ctx.arcTo(0,h,0,h-r,r); ctx.arcTo(0,0,r,0,r); ctx.closePath();
-        ctx.fill();
-        // spade glyph
-        ctx.fillStyle='#10b981';
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.font = `${Math.floor(size*0.7)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
-        ctx.fillText('♠', size/2, size/2 + size*0.02);
-        return c.toDataURL('image/png');
-      }
-      try{
-        const icon192 = makeIcon(192);
-        const icon512 = makeIcon(512);
-        const l1 = document.createElement('link');
-        l1.rel = 'apple-touch-icon'; l1.sizes = '192x192'; l1.href = icon192; document.head.appendChild(l1);
-        const l2 = document.createElement('link');
-        l2.rel = 'apple-touch-icon'; l2.sizes = '512x512'; l2.href = icon512; document.head.appendChild(l2);
-        // also register a PNG favicon fallback for some launchers
-        const linkPng = document.createElement('link');
-        linkPng.rel='icon'; linkPng.type='image/png'; linkPng.sizes='192x192'; linkPng.href=icon192;
-        document.head.appendChild(linkPng);
-      }catch(e){ /* ignore */ }
-    })();
   </script>
+  <script src="shared-icons.js"></script>
 </body>
 </html>

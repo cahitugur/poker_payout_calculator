@@ -1,0 +1,122 @@
+/*
+  Copyright (c) 2025 Cahit Ugur
+  SPDX-License-Identifier: MIT
+  Shared styles for Poker Calculator apps
+*/
+
+:root {
+  --bg: #0f172a;
+  --panel: #111827;
+  --muted: #94a3b8;
+  --text: #e2e8f0;
+  --accent: #22d3ee;
+  --ok: #10b981;
+  --warn: #ef4444;
+  --outline: #1f2937;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  background-color: var(--bg); background: radial-gradient(1200px 700px at 80% -10%, #0b122a 0%, var(--bg) 60%);
+  color: var(--text);
+  -webkit-text-size-adjust: 100%;
+}
+
+.wrap { max-width: 1100px; margin: 40px auto; padding: 0 16px; }
+h1 { font-weight: 800; margin: 0 0 20px; text-align: center; font-size: 32px; }
+
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid var(--outline);
+  border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+.toolbar { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--outline); }
+
+.btn {
+  appearance: none; border: 1px solid var(--outline); background: #0b1020; color: var(--text);
+  padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;
+  min-width: 80px; text-align: center; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: transform .06s ease, background .2s ease, border-color .2s ease;
+}
+.btn:hover { background: #0e1530; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.nav-link {
+  appearance: none; border: none; background: transparent; color: var(--accent); cursor: pointer;
+  font-weight: 600; font-size: 14px; padding: 0; text-decoration: underline;
+  transition: color .2s ease;
+}
+.nav-link:hover { color: var(--text); }
+
+.status { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+.dot { width: 12px; height: 12px; border-radius: 999px; display: inline-block; }
+.ok  { color: var(--ok); }
+.ok .dot { background: var(--ok); }
+.warn  { color: var(--warn); }
+.warn .dot { background: var(--warn); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+thead th { text-align: left; font-size: 14px; color: var(--muted); padding: 8px 14px; background: #0b1020; border-bottom: 1px solid var(--outline); }
+tbody td, tfoot th { padding: 8px 14px; border-top: 1px solid var(--outline); }
+tfoot th { background: #0b1020; font-weight: 800; border-top: 1px solid var(--outline); }
+
+.name-input, .num-input {
+  width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--outline); background: #0c1328; color: var(--text); outline: none;
+}
+.num-input { text-align: right; font-variant-numeric: tabular-nums; }
+.num-input.invalid { border-color: var(--warn); }
+.payout { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+
+.controls-cell { padding: 8px 14px; background: #0b1020; border-top: none !important; }
+.controls { display: flex; gap: 8px; align-items: flex-end; justify-content: flex-start; flex-wrap: nowrap; }
+.controls .spacer { flex: 1; }
+
+.buyin-container { width: 8ch; display: flex; flex-direction: column; gap: 4px; padding: 0px 2px; margin-right: -14px; border-left: 1px solid var(--outline); flex-shrink: 0; align-items: center; }
+.buyin-label { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1; }
+.buyin-input { width: 100%; height: 30px; padding: 6px 4px; border-radius: 6px; border: 1px solid var(--outline); background: #0c1328; color: var(--text); text-align: center; font-variant-numeric: tabular-nums; font-size: 13px; box-sizing: border-box; }
+
+footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px 0; }
+
+/* Mobile-friendly responsive design */
+@media (max-width: 768px) {
+  .wrap { padding: 0 12px; margin: 20px auto; }
+  h1 { font-size: 26px; margin: 0 0 14px; }
+
+  .toolbar { padding: 8px 10px; gap: 6px; }
+  .nav-link { font-size: 12px; }
+
+  .controls { flex-wrap: wrap; }
+  .btn { padding: 10px 12px; font-size: 13px; border-radius: 4px; }
+
+  table { font-size: 13px; }
+  thead th, tbody td, tfoot th { padding: 6px 8px; }
+
+  .name-input, .num-input { padding: 8px 6px; font-size: 13px; min-height: 40px; }
+  .buyin-input { width: 8ch; padding: 6px 6px; font-size: 13px; }
+
+  footer { padding: 12px 0; font-size: 11px; }
+}
+
+@media (max-width: 480px) {
+  .wrap { margin: 16px auto; padding: 0 8px; }
+  h1 { font-size: 22px; margin: 0 0 12px; }
+
+  .toolbar { padding: 6px 8px; gap: 4px; }
+  .nav-link { font-size: 11px; }
+
+  .btn { padding: 8px 10px; font-size: 12px; }
+
+  table { font-size: 12px; }
+  thead th, tbody td, tfoot th { padding: 5px 6px; }
+
+  .name-input, .num-input { padding: 6px 4px; font-size: 12px; min-height: 30px; }
+  .buyin-input { width: 7ch; padding: 6px 4px; font-size: 12px; }
+
+  footer { padding: 10px 0; font-size: 10px; }
+}
