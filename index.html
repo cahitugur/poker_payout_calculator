@@ -378,8 +378,7 @@
         for(const tr of rowsTbody.children){
           let inv=parseNum(tr._refs.in.value);
           let outv=parseNum(tr._refs.out.value);
-          // enforce minima: In >= buy-in (when buy-in is valid), Out >= 0
-          if(buyNum !== null && inv < buyNum){ inv = buyNum; tr._refs.in.value = fmtInt(inv); validateInput(tr._refs.in); }
+          // enforce minima: Out >= 0
           if(outv < 0){ outv = 0; tr._refs.out.value = fmt(outv); validateInput(tr._refs.out); }
           const payout = outv - inv; tr._refs.payout.textContent = fmt(payout);
           totalIn += inv; totalOut += outv;
