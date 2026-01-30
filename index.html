@@ -474,6 +474,17 @@
         for(let i=0;i<2;i++) addRow();
         // Reset available suspects list
         availableSuspects = [...USUAL_SUSPECTS];
+        // Reset delete and settle modes
+        deleteButtonMode = false;
+        checkboxesVisible = false;
+        // Hide delete buttons in all rows
+        for(const tr of rowsTbody.children){
+          const wrapper = tr.querySelector('.name-cell-wrapper');
+          if(wrapper){
+            wrapper.classList.add('hidden-delete-btns');
+            wrapper.classList.add('hidden-checkboxes');
+          }
+        }
         if(suspectsList && suspectsList.style.display === 'flex'){
           const renderFn = window.renderSuspectsList;
           if(renderFn) renderFn();
