@@ -115,6 +115,55 @@
       .winner-checkbox input[type="checkbox"] { width: 16px; height: 16px; }
       .winner-checkbox label { font-size: 12px; }
     }
+
+    /* Delete button styling */
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--warn);
+      font-size: 16px;
+      padding: 2px 4px;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+    .delete-btn:hover { opacity: 1; }
+    .name-cell-wrapper.hidden-delete-btns .delete-btn { display: none; }
+
+    /* Name cell wrapper for dual-mode toggling */
+    .name-cell-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .name-cell-wrapper input {
+      flex: 1;
+    }
+
+    /* Player chip styling for Usual Suspects */
+    #usualSuspectsList {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--outline);
+      border-radius: 8px;
+    }
+    .player-chip {
+      display: inline-block;
+      padding: 6px 12px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--ok);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .player-chip:hover { background: rgba(16, 185, 129, 0.25); transform: translateY(-1px); }
+    .player-chip:active { transform: translateY(0); }
   </style>
   </style>
 </head>
@@ -191,6 +240,11 @@
         </form>
       </div>
 
+      <div style="margin-top: 16px; text-align: center;">
+        <button id="usualSuspectsBtn" class="btn" type="button" style="padding: 8px 16px;">👥 Usual Suspects</button>
+        <div id="usualSuspectsList" style="margin-top: 12px; display: none; flex-wrap: wrap; gap: 8px; justify-content: center;"></div>
+      </div>
+
       <div class="pots-display" id="potsDisplay" style="display: none;">
         <h3>Pot Breakdown</h3>
         <div id="potsContainer"></div>
@@ -205,17 +259,22 @@
     (function(){
       const MAX_ROWS = 32;
       const STORAGE_KEY = 'poker-sidepot:v1';
+      const USUAL_SUSPECTS = ['Brian', 'Cahit', 'Colm', 'Cormac', 'Dillon', 'Euan', 'Evangelia', 'Ferhat', 'Hannan', 'James', 'Kevin', 'Kunal', 'Liam', 'Marcus', 'Mic', 'Muireann', 'Otto', 'Pawel', 'Scott', 'Tuhin'];
 
       const rowsTbody = document.getElementById('rows');
       const addRowBtn = document.getElementById('addRowBtn');
       const deleteRowBtn = document.getElementById('deleteRowBtn');
       const clearBtn = document.getElementById('clearBtn');
+      const usualSuspectsBtn = document.getElementById('usualSuspectsBtn');
       const boardsInput = document.getElementById('boardsInput');
       const totalBetEl = document.getElementById('totalBet');
       const potsDisplay = document.getElementById('potsDisplay');
       const potsContainer = document.getElementById('potsContainer');
       const statusEl = document.getElementById('balanceStatus');
       const statusText = statusEl ? statusEl.querySelector('.status-text') : null;
+
+      let deleteButtonMode = false;
+      let availableSuspects = [...USUAL_SUSPECTS];
 
       function fmt(n){ return (Math.round(n*100)/100).toFixed(2).replace('-0.00','0.00'); }
       function parseNum(v){
@@ -320,6 +379,28 @@
 
         // Name cell (column 1)
         const nameCell=createCellWithInput('name-input','Player',{inputmode:'text',enterkeyhint:'next'}, nameDef);
+
+        // Create wrapper div with delete button
+        const wrapper = document.createElement('div');
+        wrapper.className = 'name-cell-wrapper hidden-delete-btns';
+        wrapper.appendChild(nameCell.inp);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = '🗑';
+        deleteBtn.addEventListener('click', (e)=>{
+          e.preventDefault();
+          rowsTbody.removeChild(tr);
+          recalc();
+          save();
+        });
+        wrapper.appendChild(deleteBtn);
+
+        // Replace the input in nameCell with the wrapper
+        nameCell.td.innerHTML = '';
+        nameCell.td.appendChild(wrapper);
+
         tr.appendChild(nameCell.td);
 
         // Empty cell (column 2)
@@ -559,6 +640,13 @@
         rowsTbody.innerHTML='';
         rowsTbody.appendChild(createInitialPotRow(''));
         for(let i=0;i<2;i++) addRow();
+        // Reset available suspects list
+        availableSuspects = [...USUAL_SUSPECTS];
+        const suspectsList = document.getElementById('usualSuspectsList');
+        if(suspectsList && suspectsList.style.display === 'flex'){
+          const renderFn = window.renderSuspectsList;
+          if(renderFn) renderFn();
+        }
         (function(){ var first = rowsTbody.querySelector('.name-input'); if (first && window.innerWidth >= 1024) first.focus(); })();
         recalc();
         localStorage.removeItem(STORAGE_KEY);
@@ -725,11 +813,79 @@
       }
 
       addRowBtn.addEventListener('click',()=>{const tr=addRow(); if(tr) { if(window.innerWidth >= 1024) tr._refs.name.focus(); }});
-      deleteRowBtn.addEventListener('click',deleteRow);
+      deleteRowBtn.addEventListener('click',()=>{
+        deleteButtonMode = !deleteButtonMode;
+        for(const tr of rowsTbody.children){
+          const wrapper = tr.querySelector('.name-cell-wrapper');
+          if(wrapper){
+            if(deleteButtonMode){
+              wrapper.classList.remove('hidden-delete-btns');
+            } else {
+              wrapper.classList.add('hidden-delete-btns');
+            }
+          }
+        }
+        // Update button style to show active state (but never gray out)
+        deleteRowBtn.style.opacity = '1';
+      });
       clearBtn.addEventListener('click',clearTable);
       if(boardsInput){
         boardsInput.addEventListener('change', ()=>{
           recalc(); save();
+        });
+      }
+
+      // Set initial button opacity to match Add button brightness
+      deleteRowBtn.style.opacity = '1';
+
+      let suspectsList = document.getElementById('usualSuspectsList');
+
+      function renderSuspectsList(){
+        if(!suspectsList) return;
+        suspectsList.innerHTML = '';
+        for(const name of availableSuspects){
+          const chip = document.createElement('span');
+          chip.className = 'player-chip';
+          chip.textContent = name;
+          chip.addEventListener('click', ()=>{
+            // Check for empty row first
+            let emptyRow = null;
+            for(const tr of rowsTbody.children){
+              if(!tr._refs.isInitialPot && !tr._refs.name.value.trim()){
+                emptyRow = tr;
+                break;
+              }
+            }
+
+            if(emptyRow){
+              // Fill empty row
+              emptyRow._refs.name.value = name;
+            } else {
+              // Add new row at bottom
+              const tr = addRow({name, bet: ''});
+            }
+
+            // Remove from available list
+            availableSuspects = availableSuspects.filter(n => n !== name);
+            renderSuspectsList();
+            recalc();
+            save();
+          });
+          suspectsList.appendChild(chip);
+        }
+      }
+
+      // Make renderSuspectsList accessible to clearTable
+      window.renderSuspectsList = renderSuspectsList;
+
+      if(usualSuspectsBtn){
+        usualSuspectsBtn.addEventListener('click', ()=>{
+          if(suspectsList.style.display === 'none' || suspectsList.style.display === ''){
+            suspectsList.style.display = 'flex';
+            renderSuspectsList();
+          } else {
+            suspectsList.style.display = 'none';
+          }
         });
       }
 

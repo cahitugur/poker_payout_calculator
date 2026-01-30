@@ -34,6 +34,10 @@
     .name-cell-wrapper input[type="checkbox"] { flex-shrink: 0; cursor: pointer; accent-color: var(--ok); }
     .name-cell-wrapper input[type="checkbox"]:not(:checked) { opacity: 0.5; }
     .name-cell-wrapper.hidden-checkboxes input[type="checkbox"] { display: none; }
+    .delete-btn { flex-shrink: 0; cursor: pointer; background: none; border: none; font-size: 18px; padding: 0; color: var(--warn); opacity: 0.6; transition: opacity 0.2s; }
+    .delete-btn:hover { opacity: 1; }
+    .delete-btn:active { transform: scale(0.9); }
+    .name-cell-wrapper.hidden-delete-btns .delete-btn { display: none; }
     .name-header { display: flex; align-items: center; justify-content: space-between; }
     .name-header input[type="checkbox"] { cursor: pointer; margin-left: 8px; }
     .player-chip { display: inline-block; padding: 6px 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--ok); border-radius: 6px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s; }
@@ -248,10 +252,10 @@
         const outDef  = values?.out ?? '';
         const settledDef = values?.settled ?? false;
 
-  // Name cell with checkbox
+  // Name cell with checkbox and delete button
   const nameCell=createCellWithInput('name-input','Player',{inputmode:'text',enterkeyhint:'next'}, nameDef);
   const wrapper = document.createElement('div');
-  wrapper.className = 'name-cell-wrapper hidden-checkboxes'; // Start with checkboxes hidden
+  wrapper.className = 'name-cell-wrapper hidden-checkboxes hidden-delete-btns'; // Start with both hidden
   wrapper.appendChild(nameCell.inp);
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
@@ -259,6 +263,21 @@
   checkbox.title = 'Settled';
   checkbox.addEventListener('change', save);
   wrapper.appendChild(checkbox);
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'delete-btn';
+  deleteBtn.textContent = '🗑';
+  deleteBtn.title = 'Delete player';
+  deleteBtn.setAttribute('aria-label', 'Delete player');
+  deleteBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const index = Array.from(rowsTbody.children).indexOf(tr);
+    if(index !== -1){
+      rowsTbody.removeChild(tr);
+      updateCapNote(); recalc(); save();
+    }
+  });
+  wrapper.appendChild(deleteBtn);
   nameCell.td.innerHTML = '';
   nameCell.td.appendChild(wrapper);
   tr.appendChild(nameCell.td);
@@ -395,7 +414,33 @@
         for(let i=0;i<2;i++) addRow();
       }
       addRowBtn.addEventListener('click',()=>{const tr=addRow();});
-      deleteRowBtn.addEventListener('click',deleteRow);
+      deleteRowBtn.style.opacity = '1'; // Full brightness to match Add button
+      deleteRowBtn.addEventListener('click',()=>{
+        deleteButtonMode = !deleteButtonMode;
+        for(const tr of rowsTbody.children){
+          const wrapper = tr.querySelector('.name-cell-wrapper');
+          if(wrapper){
+            if(deleteButtonMode){
+              wrapper.classList.remove('hidden-delete-btns');
+              wrapper.classList.add('hidden-checkboxes');
+            } else {
+              wrapper.classList.add('hidden-delete-btns');
+              // When exiting delete mode, restore checkbox visibility based on checkboxesVisible flag
+              if(checkboxesVisible){
+                wrapper.classList.remove('hidden-checkboxes');
+              } else {
+                wrapper.classList.add('hidden-checkboxes');
+              }
+            }
+          }
+        }
+        // Update button style to show active state (but never gray out)
+        if(deleteButtonMode){
+          deleteRowBtn.style.opacity = '1';
+          settleBtn.style.opacity = '1';
+          checkboxesVisible = false;
+        }
+      });
       clearBtn.addEventListener('click',clearTable);
 
       let availableSuspects = [...USUAL_SUSPECTS];
@@ -471,12 +516,24 @@
       const spcLink = document.getElementById('spcLink');
       const settleBtn = document.getElementById('settleBtn');
       let checkboxesVisible = false; // Default to hidden
+      let deleteButtonMode = false; // Default to hidden
 
       if(settleBtn){
-        // Set initial button opacity
-        settleBtn.style.opacity = '0.5';
+        // Set initial button opacity to match Add button brightness
+        settleBtn.style.opacity = '1';
 
         settleBtn.addEventListener('click', ()=>{
+          if(deleteButtonMode){
+            // If in delete mode, turn off delete mode first
+            deleteButtonMode = false;
+            for(const tr of rowsTbody.children){
+              const wrapper = tr.querySelector('.name-cell-wrapper');
+              if(wrapper){
+                wrapper.classList.add('hidden-delete-btns');
+              }
+            }
+            deleteRowBtn.style.opacity = '1';
+          }
           checkboxesVisible = !checkboxesVisible;
           for(const tr of rowsTbody.children){
             const wrapper = tr.querySelector('.name-cell-wrapper');
@@ -488,12 +545,8 @@
               }
             }
           }
-          // Update button style to show active state
-          if(checkboxesVisible){
-            settleBtn.style.opacity = '1';
-          } else {
-            settleBtn.style.opacity = '0.5';
-          }
+          // Update button style (but never gray out)
+          settleBtn.style.opacity = '1';
         });
       }
 
