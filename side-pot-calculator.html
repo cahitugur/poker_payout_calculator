@@ -1002,12 +1002,23 @@
               }
             }
 
+            // Get the initial pot value to use for new players
+            let initialPotValue = '';
+            const initialPotRow = rowsTbody.children[0];
+            if(initialPotRow && initialPotRow._refs.isInitialPot){
+              const potVal = initialPotRow._refs.bet.value.trim();
+              if(potVal) initialPotValue = potVal;
+            }
+
             if(emptyRow){
               // Fill empty row
               emptyRow._refs.name.value = name;
+              if(initialPotValue){
+                emptyRow._refs.bet.value = initialPotValue;
+              }
             } else {
               // Add new row at bottom
-              const tr = addRow({name, bet: ''});
+              const tr = addRow({name, bet: initialPotValue});
             }
 
             // Remove from available list

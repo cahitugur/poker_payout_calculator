@@ -617,12 +617,18 @@
                 }
               }
 
+              // Get the buy-in value to use for the 'In' column
+              const buyInValue = getBuyInVal();
+
               if(emptyRow){
                 // Fill empty row
                 emptyRow._refs.name.value = name;
+                if(buyInValue !== null){
+                  emptyRow._refs.in.value = fmtInt(parseNum(buyInValue));
+                }
               } else {
                 // Add new row at bottom
-                const tr = addRow({name, in: '', out: ''});
+                const tr = addRow({name, in: buyInValue || '', out: ''});
               }
 
               // Remove from available list
