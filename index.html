@@ -1,4 +1,3 @@
-
 <!--
   Copyright (c) 2025 Cahit Ugur
   SPDX-License-Identifier: MIT
@@ -60,6 +59,20 @@
     .step-btn.plus { background: var(--ok); border-color: rgba(0,0,0,0.2); margin-left: 0px; }
     .step-btn:active { transform: translateY(1px); }
 
+    /* Hamburger menu */
+    .menu-btn {
+      background: none; border: none; cursor: pointer; font-size: 24px; color: var(--text);
+      padding: 6px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center;
+    }
+    .menu-btn span { width: 24px; height: 2px; background: var(--text); border-radius: 1px; display: block; }
+    .menu-dropdown { position: absolute; top: 100%; left: 0; background: #0b1020; border: 1px solid var(--outline); border-radius: 6px;
+      min-width: 200px; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .menu-dropdown.active { display: block; }
+    .menu-dropdown a { display: block; padding: 12px 16px; color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--outline);
+      font-weight: 500; transition: background 0.2s; }
+    .menu-dropdown a:last-child { border-bottom: none; }
+    .menu-dropdown a:hover { background: #0e1530; }
+
     /* Mobile-friendly responsive design */
     @media (max-width: 768px) {
       col.col-name { width: 35%; }
@@ -89,6 +102,15 @@
     <h1>Poker Payout Calculator</h1>
     <div class="card">
       <div class="toolbar">
+        <button id="menuBtn" class="menu-btn" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div id="menuDropdown" class="menu-dropdown">
+          <a href="index.html">Poker Payout Calculator</a>
+          <a href="side-pot-calculator.html">Side Pot Calculator</a>
+        </div>
         <span aria-hidden="true" title="Poker" style="display:inline-flex;align-items:center;gap:8px">
           <svg width="22" height="22" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
             <title>Spade</title>
@@ -100,7 +122,6 @@
           <span class="status-text">Unbalanced</span>
         </div>
         <span class="spacer" style="flex: 1;"></span>
-        <a href="side-pot-calculator.html" id="spcLink" class="nav-link">Side Pot Calculator →</a>
       </div>
 
       <div class="table-wrap">
@@ -585,6 +606,19 @@
           const params = new URLSearchParams();
           if(names.length > 0) params.set('names', names.join(','));
           window.location.href = 'side-pot-calculator.html' + (params.toString() ? '?' + params.toString() : '');
+        });
+      }
+
+      // Menu button handler
+      const menuBtn = document.getElementById('menuBtn');
+      const menuDropdown = document.getElementById('menuDropdown');
+      if(menuBtn && menuDropdown){
+        menuBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          menuDropdown.classList.toggle('active');
+        });
+        document.addEventListener('click', ()=>{
+          menuDropdown.classList.remove('active');
         });
       }
 

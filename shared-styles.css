@@ -33,7 +33,7 @@ h1 { font-weight: 800; margin: 0 0 20px; text-align: center; font-size: 32px; }
   border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 
-.toolbar { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--outline); }
+.toolbar { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--outline); position: relative; }
 
 .btn {
   appearance: none; border: 1px solid var(--outline); background: #0b1020; color: var(--text);
