@@ -272,6 +272,7 @@
         const onChange=()=>{ validateInput(betCell.inp); updateZeroClass(); recalc(); save(); };
         betCell.inp.addEventListener('input',onChange);
         betCell.inp.addEventListener('blur',onChange);
+        betCell.inp.addEventListener('click', ()=>{ betCell.inp.select(); });
         updateZeroClass();
 
         tr._refs={bet:betCell.inp, isInitialPot: true};
@@ -308,6 +309,7 @@
         updateZeroClass(); // Initial check
         for(const el of [nameInp,betInp]){
           el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); focusNext(e.currentTarget); } });
+          el.addEventListener('click', ()=>{ el.select(); });
         }
       }
 

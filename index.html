@@ -236,6 +236,7 @@
         updateZeroClass(); // Initial check
         for(const el of [nameInp,inInp,outInp]){
           el.addEventListener('input', save);
+          el.addEventListener('click', ()=>{ el.select(); });
         }
       }
 
@@ -463,6 +464,7 @@
           }
           save(); recalc();
         });
+        buyInInput.addEventListener('click', ()=>{ buyInInput.select(); });
       }
 
       // Transfer player names when navigating to SPC
