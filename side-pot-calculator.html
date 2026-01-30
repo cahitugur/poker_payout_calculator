@@ -110,6 +110,14 @@
       .winner-checkbox { padding: 8px 0; }
       .winner-checkbox input[type="checkbox"] { width: 18px; height: 18px; }
       .winner-checkbox label { font-size: 13px; }
+
+      /* Toast notification adjustments for tablet */
+      .toast-notification {
+        bottom: 16px;
+        right: 16px;
+        padding: 14px 20px;
+        font-size: 14px;
+      }
     }
 
     @media (max-width: 480px) {
@@ -137,6 +145,17 @@
       .winner-checkbox { padding: 6px 0; }
       .winner-checkbox input[type="checkbox"] { width: 16px; height: 16px; }
       .winner-checkbox label { font-size: 12px; }
+
+      /* Toast notification adjustments for mobile */
+      .toast-notification {
+        bottom: 12px;
+        right: 12px;
+        left: 12px;
+        padding: 12px 16px;
+        font-size: 13px;
+        border-radius: 6px;
+        text-align: center;
+      }
     }
 
     /* Delete button styling */
@@ -194,13 +213,69 @@
       padding: 6px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center;
     }
     .menu-btn span { width: 24px; height: 2px; background: var(--text); border-radius: 1px; display: block; }
-    .menu-dropdown { position: absolute; top: 100%; left: 0; background: #0b1020; border: 1px solid var(--outline); border-radius: 6px;
-      min-width: 200px; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .menu-dropdown { position: absolute; top: 100%; left: 0; background: #0e1530; border: 1px solid var(--outline); border-radius: 6px;
+      min-width: 200px; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
     .menu-dropdown.active { display: block; }
     .menu-dropdown a { display: block; padding: 12px 16px; color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--outline);
-      font-weight: 500; transition: background 0.2s; }
+      font-weight: 500; font-size: 15px; transition: background 0.2s; }
     .menu-dropdown a:last-child { border-bottom: none; }
-    .menu-dropdown a:hover { background: #0e1530; }
+    .menu-dropdown a:hover { background: #132a47; }
+
+    /* Options button and dropdown */
+    .options-btn {
+      background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text);
+      padding: 6px 8px; display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .options-btn:hover { opacity: 0.8; }
+    .options-dropdown { position: absolute; top: 100%; right: 0; background: #0e1530; border: 1px solid var(--outline); border-radius: 6px;
+      min-width: 150px; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .options-dropdown.active { display: block; }
+    .options-item { display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none;
+      color: var(--accent); cursor: pointer; font-weight: 500; font-size: 15px; transition: background 0.2s; border-bottom: 1px solid var(--outline); }
+    .options-item:last-child { border-bottom: none; }
+    .options-item:hover { background: #132a47; }
+
+    /* Toast notification styles */
+    .toast-notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-weight: 500;
+      font-size: 16px;
+      z-index: 9999;
+      opacity: 1;
+      animation: slideInFade 0.3s ease-out forwards;
+      pointer-events: auto;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .toast-notification.fade-out {
+      animation: slideOutFade 0.3s ease-out forwards;
+    }
+    @keyframes slideInFade {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes slideOutFade {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+    }
   </style>
 </head>
 <body>
@@ -228,6 +303,10 @@
           <span class="status-text">Unbalanced</span>
         </div>
         <span class="spacer" style="flex: 1;"></span>
+        <button id="optionsBtn" class="options-btn" aria-label="Options">⋮</button>
+        <div id="optionsDropdown" class="options-dropdown">
+          <button id="shareBtn" class="options-item" type="button">↗️ Share</button>
+        </div>
       </div>
 
       <div class="table-wrap">
@@ -946,17 +1025,180 @@
         });
       }
 
+      // Toast notification helper function - DEFINE FIRST
+      function showToastNotification(message){
+        console.log('showToastNotification called with:', message);
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        console.log('Toast added to DOM:', toast);
+
+        // Trigger animation
+        setTimeout(()=>{
+          toast.classList.add('fade-out');
+        }, 2000);
+
+        // Remove from DOM after animation
+        setTimeout(()=>{
+          if(document.body.contains(toast)){
+            document.body.removeChild(toast);
+          }
+        }, 2300);
+      }
+
       // Menu button handler
       const menuBtn = document.getElementById('menuBtn');
       const menuDropdown = document.getElementById('menuDropdown');
       if(menuBtn && menuDropdown){
         menuBtn.addEventListener('click', (e)=>{
           e.stopPropagation();
+          // Close options dropdown when opening menu
+          const optionsDropdown = document.getElementById('optionsDropdown');
+          if(optionsDropdown && optionsDropdown.classList.contains('active')){
+            optionsDropdown.classList.remove('active');
+          }
           menuDropdown.classList.toggle('active');
         });
         document.addEventListener('click', ()=>{
           menuDropdown.classList.remove('active');
         });
+      }
+
+      // Options button handler
+      const optionsBtn = document.getElementById('optionsBtn');
+      const optionsDropdown = document.getElementById('optionsDropdown');
+      if(optionsBtn && optionsDropdown){
+        optionsBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          // Close menu dropdown when opening options
+          const menuDropdownEl = document.getElementById('menuDropdown');
+          if(menuDropdownEl && menuDropdownEl.classList.contains('active')){
+            menuDropdownEl.classList.remove('active');
+          }
+          optionsDropdown.classList.toggle('active');
+        });
+      }
+
+      // Share button handler
+      const shareBtn = document.getElementById('shareBtn');
+      if(shareBtn){
+        shareBtn.addEventListener('click', ()=>{
+          try {
+            const spcData = serialize();
+            const encoded = btoa(JSON.stringify(spcData));
+            const shareUrl = window.location.href.split('?')[0] + '?share=' + encoded;
+
+            let copied = false;
+
+            // Try clipboard API first
+            if(navigator.clipboard && navigator.clipboard.writeText){
+              navigator.clipboard.writeText(shareUrl).then(()=>{
+                copied = true;
+                showToastNotification('Share link copied to clipboard!');
+              }).catch((err)=>{
+                console.log('Clipboard API failed, trying fallback:', err);
+                // Fallback: select text for manual copy
+                fallbackCopy(shareUrl);
+              });
+            } else {
+              // Fallback for browsers without clipboard API
+              fallbackCopy(shareUrl);
+            }
+
+            function fallbackCopy(url){
+              try {
+                const textarea = document.createElement('textarea');
+                textarea.value = url;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-999999px';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                const success = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if(success){
+                  showToastNotification('Share link copied to clipboard!');
+                } else {
+                  showToastNotification('Failed to copy link');
+                }
+              } catch(e){
+                console.error('Copy failed:', e);
+                showToastNotification('Failed to copy link');
+              }
+            }
+
+            // Close dropdown after share action
+            optionsDropdown.classList.remove('active');
+          } catch(e){
+            console.error('Share error:', e);
+            showToastNotification('Error copying share link');
+          }
+        });
+      }
+
+      // Close options dropdown when clicking elsewhere
+      document.addEventListener('click', ()=>{
+        if(optionsDropdown) optionsDropdown.classList.remove('active');
+      });
+
+      // URL restoration for share data
+      const shareParam = urlParams.get('share');
+      if(shareParam && !transferredNames){
+        try {
+          const decoded = atob(shareParam);
+          const sharedData = JSON.parse(decoded);
+          if(sharedData && sharedData.rows && Array.isArray(sharedData.rows)){
+            rowsTbody.innerHTML = '';
+            if(boardsInput && sharedData.boards) boardsInput.value = sharedData.boards;
+            rowsTbody.appendChild(createInitialPotRow(sharedData.initialPot || ''));
+            for(const r of sharedData.rows){
+              addRow({ name: r.name ?? '', bet: r.bet ?? '' });
+            }
+            // Reset available suspects after restoring from share
+            const usedNames = sharedData.rows.map(r => r.name).filter(n => n && USUAL_SUSPECTS.includes(n));
+            availableSuspects = USUAL_SUSPECTS.filter(n => !usedNames.includes(n));
+            recalc();
+          }
+        } catch(e){
+          console.error('Failed to restore share data:', e);
+          if(!restore()){
+            rowsTbody.appendChild(createInitialPotRow(''));
+            for(let i=0;i<2;i++) addRow();
+          }
+        }
+      } else if(shareParam && transferredNames){
+        // If both share and names parameters exist, share takes precedence
+        try {
+          const decoded = atob(shareParam);
+          const sharedData = JSON.parse(decoded);
+          if(sharedData && sharedData.rows && Array.isArray(sharedData.rows)){
+            rowsTbody.innerHTML = '';
+            if(boardsInput && sharedData.boards) boardsInput.value = sharedData.boards;
+            rowsTbody.appendChild(createInitialPotRow(sharedData.initialPot || ''));
+            for(const r of sharedData.rows){
+              addRow({ name: r.name ?? '', bet: r.bet ?? '' });
+            }
+            const usedNames = sharedData.rows.map(r => r.name).filter(n => n && USUAL_SUSPECTS.includes(n));
+            availableSuspects = USUAL_SUSPECTS.filter(n => !usedNames.includes(n));
+            recalc();
+          }
+        } catch(e){
+          console.error('Failed to restore share data:', e);
+          // Fall back to transferred names if share restoration fails
+          if(transferredNames && !restore()){
+            const names = transferredNames.split(',').filter(n => n.trim());
+            rowsTbody.innerHTML='';
+            rowsTbody.appendChild(createInitialPotRow(''));
+            if(names.length > 0){
+              for(const name of names){
+                addRow({ name: name.trim(), bet: '' });
+              }
+            } else {
+              for(let i=0;i<2;i++) addRow();
+            }
+          }
+        }
       }
 
       recalc();
