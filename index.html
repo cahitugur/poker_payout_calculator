@@ -120,7 +120,7 @@
                     <div class="spacer"></div>
                     <div class="buyin-container">
                       <label class="buyin-label" for="buyInInput">Buy-In</label>
-                      <input id="buyInInput" class="buyin-input num-input" type="text" inputmode="decimal" value="30.00" />
+                      <input id="buyInInput" class="buyin-input num-input" type="text" inputmode="numeric" value="30" />
                     </div>
                   </div>
                 </th>
@@ -181,6 +181,7 @@
       const capNote = document.getElementById('rowCapNote');
 
       function fmt(n){ return (Math.round(n*100)/100).toFixed(2).replace('-0.00','0.00'); }
+      function fmtInt(n){ return Math.round(n).toString().replace('-0','0'); }
       function parseNum(v){
         if(!v) return 0;
         let str = String(v).trim();
@@ -276,7 +277,7 @@
   stepMinusTd.appendChild(minusBtn); tr.appendChild(stepMinusTd);
 
   // In cell
-  const inCell=createCellWithInput('num-input','0.00',{inputmode:'decimal',enterkeyhint:'next',pattern:"[0-9.,\\- ]*"}, inDef);
+  const inCell=createCellWithInput('num-input','0',{inputmode:'numeric',enterkeyhint:'next',pattern:"[0-9\\- ]*"}, inDef);
   tr.appendChild(inCell.td);
 
   // Plus step cell
@@ -301,7 +302,7 @@
           const cur = parseNum(inCell.inp.value);
           let newVal = cur + delta * buyNum;
           if(newVal < buyNum) newVal = buyNum;
-          inCell.inp.value = (Math.round(newVal*100)/100).toFixed(2);
+          inCell.inp.value = fmtInt(newVal);
           validateInput(inCell.inp);
           recalc(); save();
         }
@@ -387,12 +388,12 @@
           let inv=parseNum(tr._refs.in.value);
           let outv=parseNum(tr._refs.out.value);
           // enforce minima: In >= buy-in (when buy-in is valid), Out >= 0
-          if(buyNum !== null && inv < buyNum){ inv = buyNum; tr._refs.in.value = fmt(inv); validateInput(tr._refs.in); }
+          if(buyNum !== null && inv < buyNum){ inv = buyNum; tr._refs.in.value = fmtInt(inv); validateInput(tr._refs.in); }
           if(outv < 0){ outv = 0; tr._refs.out.value = fmt(outv); validateInput(tr._refs.out); }
           const payout = outv - inv; tr._refs.payout.textContent = fmt(payout);
           totalIn += inv; totalOut += outv;
         }
-        totalInEl.textContent=fmt(totalIn); totalOutEl.textContent=fmt(totalOut); totalPayoutEl.textContent=fmt(totalOut-totalIn);
+        totalInEl.textContent=fmtInt(totalIn); totalOutEl.textContent=fmt(totalOut); totalPayoutEl.textContent=fmt(totalOut-totalIn);
         const balanced=Math.abs(Math.round((totalOut-totalIn)*100))===0;
         statusEl.classList.toggle('ok',balanced); statusEl.classList.toggle('warn',!balanced);
         statusText.textContent=balanced?'Balanced':'Unbalanced';
@@ -470,7 +471,7 @@
           for(const tr of rowsTbody.children){
             try{
               const inEl = tr._refs && tr._refs.in;
-              if(inEl){ inEl.value = val!==null ? val : inEl.value; validateInput(inEl); }
+              if(inEl){ inEl.value = val!==null ? fmtInt(parseNum(val)) : inEl.value; validateInput(inEl); }
             }catch(e){}
           }
           save(); recalc();
