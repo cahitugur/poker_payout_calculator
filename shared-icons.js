@@ -68,6 +68,6 @@ try {
 (function () {
   const footer = document.querySelector("footer");
   if (footer && !footer.hasChildNodes()) {
-    footer.textContent = "Version 1.4";
+    footer.textContent = "Version 1.5";
   }
 })();
