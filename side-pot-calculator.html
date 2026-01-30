@@ -12,7 +12,30 @@
   <!-- Favicon: green spade icon (SVG for tabs); PNG touch icon will be generated at runtime -->
   <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" ry="12" fill="%230b1020"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="44" font-family="system-ui,Segoe UI,Roboto,Helvetica,Arial" fill="%2310b981">♠</text></svg>'/>
   <meta name="theme-color" content="#0b1020" />
-  <!-- Single-file shortcut support (best-effort): iOS/Android home-screen shortcuts look for apple-touch-icon -->
+  <!-- Single-file shortcut support (best-effort      // init
+      // Check for transferred names from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const transferredNames = urlParams.get('names');
+
+      if(transferredNames && !restore()){
+        // If names were transferred, create rows with those names
+        const names = transferredNames.split(',').filter(n => n.trim());
+        rowsTbody.innerHTML='';
+        rowsTbody.appendChild(createInitialPotRow(''));
+        if(names.length > 0){
+          for(const name of names){
+            addRow({ name: name.trim(), bet: '' });
+          }
+          // Remove transferred names from available suspects
+          availableSuspects = availableSuspects.filter(n => !names.includes(n));
+        } else {
+          for(let i=0;i<2;i++) addRow();
+        }
+      } else if(!restore()){
+        rowsTbody.appendChild(createInitialPotRow(''));
+        for(let i=0;i<2;i++) addRow();
+      }
+      recalc();-screen shortcuts look for apple-touch-icon -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="stylesheet" href="shared-styles.css" />
@@ -87,6 +110,14 @@
       .winner-checkbox { padding: 8px 0; }
       .winner-checkbox input[type="checkbox"] { width: 18px; height: 18px; }
       .winner-checkbox label { font-size: 13px; }
+
+      /* Toast notification adjustments for tablet */
+      .toast-notification {
+        bottom: 16px;
+        right: 16px;
+        padding: 14px 20px;
+        font-size: 14px;
+      }
     }
 
     @media (max-width: 480px) {
@@ -114,8 +145,137 @@
       .winner-checkbox { padding: 6px 0; }
       .winner-checkbox input[type="checkbox"] { width: 16px; height: 16px; }
       .winner-checkbox label { font-size: 12px; }
+
+      /* Toast notification adjustments for mobile */
+      .toast-notification {
+        bottom: 12px;
+        right: 12px;
+        left: 12px;
+        padding: 12px 16px;
+        font-size: 13px;
+        border-radius: 6px;
+        text-align: center;
+      }
     }
-  </style>
+
+    /* Delete button styling */
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--warn);
+      font-size: 16px;
+      padding: 2px 4px;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+    .delete-btn:hover { opacity: 1; }
+    .name-cell-wrapper.hidden-delete-btns .delete-btn { display: none; }
+
+    /* Name cell wrapper for dual-mode toggling */
+    .name-cell-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .name-cell-wrapper input {
+      flex: 1;
+    }
+
+    /* Player chip styling for Usual Suspects */
+    #usualSuspectsList {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--outline);
+      border-radius: 8px;
+    }
+    .player-chip {
+      display: inline-block;
+      padding: 6px 12px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--ok);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .player-chip:hover { background: rgba(16, 185, 129, 0.25); transform: translateY(-1px); }
+    .player-chip:active { transform: translateY(0); }
+
+    /* Hamburger menu */
+    .menu-btn {
+      background: none; border: none; cursor: pointer; font-size: 24px; color: var(--text);
+      padding: 6px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center;
+    }
+    .menu-btn span { width: 24px; height: 2px; background: var(--text); border-radius: 1px; display: block; }
+    .menu-dropdown { position: absolute; top: 100%; left: 0; background: #0e1530; border: 1px solid var(--outline); border-radius: 6px;
+      min-width: 200px; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .menu-dropdown.active { display: block; }
+    .menu-dropdown a { display: block; padding: 12px 16px; color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--outline);
+      font-weight: 500; font-size: 15px; transition: background 0.2s; }
+    .menu-dropdown a:last-child { border-bottom: none; }
+    .menu-dropdown a:hover { background: #132a47; }
+
+    /* Options button and dropdown */
+    .options-btn {
+      background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text);
+      padding: 6px 8px; display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .options-btn:hover { opacity: 0.8; }
+    .options-dropdown { position: absolute; top: 100%; right: 0; background: #0e1530; border: 1px solid var(--outline); border-radius: 6px;
+      min-width: 150px; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .options-dropdown.active { display: block; }
+    .options-item { display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none;
+      color: var(--accent); cursor: pointer; font-weight: 500; font-size: 15px; transition: background 0.2s; border-bottom: 1px solid var(--outline); }
+    .options-item:last-child { border-bottom: none; }
+    .options-item:hover { background: #132a47; }
+
+    /* Toast notification styles */
+    .toast-notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-weight: 500;
+      font-size: 16px;
+      z-index: 9999;
+      opacity: 1;
+      animation: slideInFade 0.3s ease-out forwards;
+      pointer-events: auto;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .toast-notification.fade-out {
+      animation: slideOutFade 0.3s ease-out forwards;
+    }
+    @keyframes slideInFade {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes slideOutFade {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+    }
   </style>
 </head>
 <body>
@@ -123,6 +283,15 @@
     <h1>Side Pot Calculator</h1>
     <div class="card">
       <div class="toolbar">
+        <button id="menuBtn" class="menu-btn" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div id="menuDropdown" class="menu-dropdown">
+          <a href="index.html">Poker Payout Calculator</a>
+          <a href="side-pot-calculator.html">Side Pot Calculator</a>
+        </div>
         <span aria-hidden="true" title="Poker" style="display:inline-flex;align-items:center;gap:8px">
           <svg width="22" height="22" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
             <title>Spade</title>
@@ -134,7 +303,10 @@
           <span class="status-text">Unbalanced</span>
         </div>
         <span class="spacer" style="flex: 1;"></span>
-        <a href="index.html" id="ppcLink" class="nav-link">Payout Calculator →</a>
+        <button id="optionsBtn" class="options-btn" aria-label="Options">⋮</button>
+        <div id="optionsDropdown" class="options-dropdown">
+          <button id="shareBtn" class="options-item" type="button">↗️ Share</button>
+        </div>
       </div>
 
       <div class="table-wrap">
@@ -191,6 +363,11 @@
         </form>
       </div>
 
+      <div style="margin-top: 16px; text-align: center;">
+        <button id="usualSuspectsBtn" class="btn" type="button" style="padding: 8px 16px;">👥 Usual Suspects</button>
+        <div id="usualSuspectsList" style="margin-top: 12px; display: none; flex-wrap: wrap; gap: 8px; justify-content: center;"></div>
+      </div>
+
       <div class="pots-display" id="potsDisplay" style="display: none;">
         <h3>Pot Breakdown</h3>
         <div id="potsContainer"></div>
@@ -201,6 +378,7 @@
 
   <footer></footer>
 
+  <script src="shared-data.js"></script>
   <script>
     (function(){
       const MAX_ROWS = 32;
@@ -210,12 +388,16 @@
       const addRowBtn = document.getElementById('addRowBtn');
       const deleteRowBtn = document.getElementById('deleteRowBtn');
       const clearBtn = document.getElementById('clearBtn');
+      const usualSuspectsBtn = document.getElementById('usualSuspectsBtn');
       const boardsInput = document.getElementById('boardsInput');
       const totalBetEl = document.getElementById('totalBet');
       const potsDisplay = document.getElementById('potsDisplay');
       const potsContainer = document.getElementById('potsContainer');
       const statusEl = document.getElementById('balanceStatus');
       const statusText = statusEl ? statusEl.querySelector('.status-text') : null;
+
+      let deleteButtonMode = false;
+      let availableSuspects = [...USUAL_SUSPECTS];
 
       function fmt(n){ return (Math.round(n*100)/100).toFixed(2).replace('-0.00','0.00'); }
       function parseNum(v){
@@ -272,6 +454,7 @@
         const onChange=()=>{ validateInput(betCell.inp); updateZeroClass(); recalc(); save(); };
         betCell.inp.addEventListener('input',onChange);
         betCell.inp.addEventListener('blur',onChange);
+        betCell.inp.addEventListener('click', ()=>{ betCell.inp.select(); });
         updateZeroClass();
 
         tr._refs={bet:betCell.inp, isInitialPot: true};
@@ -308,6 +491,7 @@
         updateZeroClass(); // Initial check
         for(const el of [nameInp,betInp]){
           el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); focusNext(e.currentTarget); } });
+          el.addEventListener('click', ()=>{ el.select(); });
         }
       }
 
@@ -318,6 +502,41 @@
 
         // Name cell (column 1)
         const nameCell=createCellWithInput('name-input','Player',{inputmode:'text',enterkeyhint:'next'}, nameDef);
+
+        // Create wrapper div with delete button
+        const wrapper = document.createElement('div');
+        // Set initial classes based on current delete mode
+        wrapper.className = deleteButtonMode ? 'name-cell-wrapper' : 'name-cell-wrapper hidden-delete-btns';
+        wrapper.appendChild(nameCell.inp);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = '🗑';
+        deleteBtn.addEventListener('click', (e)=>{
+          e.preventDefault();
+          const playerName = tr._refs.name.value.trim();
+          rowsTbody.removeChild(tr);
+          // Add player back to available suspects only if they're in the original hardcoded list
+          if(playerName && USUAL_SUSPECTS.includes(playerName) && !availableSuspects.includes(playerName)){
+            availableSuspects.push(playerName);
+            availableSuspects.sort(); // Keep list alphabetically sorted
+            // Re-render the suspects list if it's visible
+            const suspectsList = document.getElementById('usualSuspectsList');
+            if(suspectsList && suspectsList.style.display === 'flex'){
+              const renderFn = window.renderSuspectsList;
+              if(renderFn) renderFn();
+            }
+          }
+          recalc();
+          save();
+        });
+        wrapper.appendChild(deleteBtn);
+
+        // Replace the input in nameCell with the wrapper
+        nameCell.td.innerHTML = '';
+        nameCell.td.appendChild(wrapper);
+
         tr.appendChild(nameCell.td);
 
         // Empty cell (column 2)
@@ -557,6 +776,22 @@
         rowsTbody.innerHTML='';
         rowsTbody.appendChild(createInitialPotRow(''));
         for(let i=0;i<2;i++) addRow();
+        // Reset available suspects list
+        availableSuspects = [...USUAL_SUSPECTS];
+        // Reset delete mode
+        deleteButtonMode = false;
+        // Hide delete buttons in all rows
+        for(const tr of rowsTbody.children){
+          const wrapper = tr.querySelector('.name-cell-wrapper');
+          if(wrapper){
+            wrapper.classList.add('hidden-delete-btns');
+          }
+        }
+        const suspectsList = document.getElementById('usualSuspectsList');
+        if(suspectsList && suspectsList.style.display === 'flex'){
+          const renderFn = window.renderSuspectsList;
+          if(renderFn) renderFn();
+        }
         (function(){ var first = rowsTbody.querySelector('.name-input'); if (first && window.innerWidth >= 1024) first.focus(); })();
         recalc();
         localStorage.removeItem(STORAGE_KEY);
@@ -723,12 +958,256 @@
       }
 
       addRowBtn.addEventListener('click',()=>{const tr=addRow(); if(tr) { if(window.innerWidth >= 1024) tr._refs.name.focus(); }});
-      deleteRowBtn.addEventListener('click',deleteRow);
+      deleteRowBtn.addEventListener('click',()=>{
+        deleteButtonMode = !deleteButtonMode;
+        for(const tr of rowsTbody.children){
+          const wrapper = tr.querySelector('.name-cell-wrapper');
+          if(wrapper){
+            if(deleteButtonMode){
+              wrapper.classList.remove('hidden-delete-btns');
+            } else {
+              wrapper.classList.add('hidden-delete-btns');
+            }
+          }
+        }
+        // Update button style to show active state (but never gray out)
+        deleteRowBtn.style.opacity = '1';
+      });
       clearBtn.addEventListener('click',clearTable);
       if(boardsInput){
         boardsInput.addEventListener('change', ()=>{
           recalc(); save();
         });
+      }
+
+      // Set initial button opacity to match Add button brightness
+      deleteRowBtn.style.opacity = '1';
+
+      let suspectsList = document.getElementById('usualSuspectsList');
+
+      function renderSuspectsList(){
+        if(!suspectsList) return;
+        suspectsList.innerHTML = '';
+        for(const name of availableSuspects){
+          const chip = document.createElement('span');
+          chip.className = 'player-chip';
+          chip.textContent = name;
+          chip.addEventListener('click', ()=>{
+            // Check for empty row first
+            let emptyRow = null;
+            for(const tr of rowsTbody.children){
+              if(!tr._refs.isInitialPot && !tr._refs.name.value.trim()){
+                emptyRow = tr;
+                break;
+              }
+            }
+
+            if(emptyRow){
+              // Fill empty row
+              emptyRow._refs.name.value = name;
+            } else {
+              // Add new row at bottom
+              const tr = addRow({name, bet: ''});
+            }
+
+            // Remove from available list
+            availableSuspects = availableSuspects.filter(n => n !== name);
+            renderSuspectsList();
+            recalc();
+            save();
+          });
+          suspectsList.appendChild(chip);
+        }
+      }
+
+      // Make renderSuspectsList accessible to clearTable
+      window.renderSuspectsList = renderSuspectsList;
+
+      if(usualSuspectsBtn){
+        usualSuspectsBtn.addEventListener('click', ()=>{
+          if(suspectsList.style.display === 'none' || suspectsList.style.display === ''){
+            suspectsList.style.display = 'flex';
+            renderSuspectsList();
+          } else {
+            suspectsList.style.display = 'none';
+          }
+        });
+      }
+
+      // Toast notification helper function - DEFINE FIRST
+      function showToastNotification(message){
+        console.log('showToastNotification called with:', message);
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        console.log('Toast added to DOM:', toast);
+
+        // Trigger animation
+        setTimeout(()=>{
+          toast.classList.add('fade-out');
+        }, 2000);
+
+        // Remove from DOM after animation
+        setTimeout(()=>{
+          if(document.body.contains(toast)){
+            document.body.removeChild(toast);
+          }
+        }, 2300);
+      }
+
+      // Menu button handler
+      const menuBtn = document.getElementById('menuBtn');
+      const menuDropdown = document.getElementById('menuDropdown');
+      if(menuBtn && menuDropdown){
+        menuBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          // Close options dropdown when opening menu
+          const optionsDropdown = document.getElementById('optionsDropdown');
+          if(optionsDropdown && optionsDropdown.classList.contains('active')){
+            optionsDropdown.classList.remove('active');
+          }
+          menuDropdown.classList.toggle('active');
+        });
+        document.addEventListener('click', ()=>{
+          menuDropdown.classList.remove('active');
+        });
+      }
+
+      // Options button handler
+      const optionsBtn = document.getElementById('optionsBtn');
+      const optionsDropdown = document.getElementById('optionsDropdown');
+      if(optionsBtn && optionsDropdown){
+        optionsBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          // Close menu dropdown when opening options
+          const menuDropdownEl = document.getElementById('menuDropdown');
+          if(menuDropdownEl && menuDropdownEl.classList.contains('active')){
+            menuDropdownEl.classList.remove('active');
+          }
+          optionsDropdown.classList.toggle('active');
+        });
+      }
+
+      // Share button handler
+      const shareBtn = document.getElementById('shareBtn');
+      if(shareBtn){
+        shareBtn.addEventListener('click', ()=>{
+          try {
+            const spcData = serialize();
+            const encoded = btoa(JSON.stringify(spcData));
+            const shareUrl = window.location.href.split('?')[0] + '?share=' + encoded;
+
+            let copied = false;
+
+            // Try clipboard API first
+            if(navigator.clipboard && navigator.clipboard.writeText){
+              navigator.clipboard.writeText(shareUrl).then(()=>{
+                copied = true;
+                showToastNotification('Share link copied to clipboard!');
+              }).catch((err)=>{
+                console.log('Clipboard API failed, trying fallback:', err);
+                // Fallback: select text for manual copy
+                fallbackCopy(shareUrl);
+              });
+            } else {
+              // Fallback for browsers without clipboard API
+              fallbackCopy(shareUrl);
+            }
+
+            function fallbackCopy(url){
+              try {
+                const textarea = document.createElement('textarea');
+                textarea.value = url;
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-999999px';
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                const success = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if(success){
+                  showToastNotification('Share link copied to clipboard!');
+                } else {
+                  showToastNotification('Failed to copy link');
+                }
+              } catch(e){
+                console.error('Copy failed:', e);
+                showToastNotification('Failed to copy link');
+              }
+            }
+
+            // Close dropdown after share action
+            optionsDropdown.classList.remove('active');
+          } catch(e){
+            console.error('Share error:', e);
+            showToastNotification('Error copying share link');
+          }
+        });
+      }
+
+      // Close options dropdown when clicking elsewhere
+      document.addEventListener('click', ()=>{
+        if(optionsDropdown) optionsDropdown.classList.remove('active');
+      });
+
+      // URL restoration for share data
+      const shareParam = urlParams.get('share');
+      if(shareParam && !transferredNames){
+        try {
+          const decoded = atob(shareParam);
+          const sharedData = JSON.parse(decoded);
+          if(sharedData && sharedData.rows && Array.isArray(sharedData.rows)){
+            rowsTbody.innerHTML = '';
+            if(boardsInput && sharedData.boards) boardsInput.value = sharedData.boards;
+            rowsTbody.appendChild(createInitialPotRow(sharedData.initialPot || ''));
+            for(const r of sharedData.rows){
+              addRow({ name: r.name ?? '', bet: r.bet ?? '' });
+            }
+            // Reset available suspects after restoring from share
+            const usedNames = sharedData.rows.map(r => r.name).filter(n => n && USUAL_SUSPECTS.includes(n));
+            availableSuspects = USUAL_SUSPECTS.filter(n => !usedNames.includes(n));
+            recalc();
+          }
+        } catch(e){
+          console.error('Failed to restore share data:', e);
+          if(!restore()){
+            rowsTbody.appendChild(createInitialPotRow(''));
+            for(let i=0;i<2;i++) addRow();
+          }
+        }
+      } else if(shareParam && transferredNames){
+        // If both share and names parameters exist, share takes precedence
+        try {
+          const decoded = atob(shareParam);
+          const sharedData = JSON.parse(decoded);
+          if(sharedData && sharedData.rows && Array.isArray(sharedData.rows)){
+            rowsTbody.innerHTML = '';
+            if(boardsInput && sharedData.boards) boardsInput.value = sharedData.boards;
+            rowsTbody.appendChild(createInitialPotRow(sharedData.initialPot || ''));
+            for(const r of sharedData.rows){
+              addRow({ name: r.name ?? '', bet: r.bet ?? '' });
+            }
+            const usedNames = sharedData.rows.map(r => r.name).filter(n => n && USUAL_SUSPECTS.includes(n));
+            availableSuspects = USUAL_SUSPECTS.filter(n => !usedNames.includes(n));
+            recalc();
+          }
+        } catch(e){
+          console.error('Failed to restore share data:', e);
+          // Fall back to transferred names if share restoration fails
+          if(transferredNames && !restore()){
+            const names = transferredNames.split(',').filter(n => n.trim());
+            rowsTbody.innerHTML='';
+            rowsTbody.appendChild(createInitialPotRow(''));
+            if(names.length > 0){
+              for(const name of names){
+                addRow({ name: name.trim(), bet: '' });
+              }
+            } else {
+              for(let i=0;i<2;i++) addRow();
+            }
+          }
+        }
       }
 
       recalc();

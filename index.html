@@ -1,4 +1,3 @@
-
 <!--
   Copyright (c) 2025 Cahit Ugur
   SPDX-License-Identifier: MIT
@@ -34,6 +33,10 @@
     .name-cell-wrapper input[type="checkbox"] { flex-shrink: 0; cursor: pointer; accent-color: var(--ok); }
     .name-cell-wrapper input[type="checkbox"]:not(:checked) { opacity: 0.5; }
     .name-cell-wrapper.hidden-checkboxes input[type="checkbox"] { display: none; }
+    .delete-btn { flex-shrink: 0; cursor: pointer; background: none; border: none; font-size: 18px; padding: 0; color: var(--warn); opacity: 0.6; transition: opacity 0.2s; }
+    .delete-btn:hover { opacity: 1; }
+    .delete-btn:active { transform: scale(0.9); }
+    .name-cell-wrapper.hidden-delete-btns .delete-btn { display: none; }
     .name-header { display: flex; align-items: center; justify-content: space-between; }
     .name-header input[type="checkbox"] { cursor: pointer; margin-left: 8px; }
     .player-chip { display: inline-block; padding: 6px 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--ok); border-radius: 6px; color: var(--text); cursor: pointer; font-size: 13px; transition: all 0.2s; }
@@ -48,7 +51,7 @@
     .step-cell.plus-cell { text-align: left; }
     .step-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 20px; height: 20px; padding: 0px; border-radius: 50%; border: 1px solid var(--outline);
+      width: 25px; height: 25px; padding: 0px; border-radius: 50%; border: 1px solid var(--outline);
       cursor: pointer; font-weight: 800; color: white; font-size: 12px; background: transparent;
     }
     /* push minus rightward and plus leftward by adding external margins */
@@ -56,6 +59,75 @@
     .step-btn.plus { background: var(--ok); border-color: rgba(0,0,0,0.2); margin-left: 0px; }
     .step-btn:active { transform: translateY(1px); }
 
+    /* Hamburger menu */
+    .menu-btn {
+      background: none; border: none; cursor: pointer; font-size: 24px; color: var(--text);
+      padding: 6px; display: flex; flex-direction: column; gap: 5px; align-items: center; justify-content: center;
+    }
+    .menu-btn span { width: 24px; height: 2px; background: var(--text); border-radius: 1px; display: block; }
+    .menu-dropdown { position: absolute; top: 100%; left: 0; background: #0e1530; border: 1px solid var(--outline); border-radius: 6px;
+      min-width: 200px; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .menu-dropdown.active { display: block; }
+    .menu-dropdown a { display: block; padding: 12px 16px; color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--outline);
+      font-weight: 500; font-size: 15px; transition: background 0.2s; }
+    .menu-dropdown a:last-child { border-bottom: none; }
+    .menu-dropdown a:hover { background: #132a47; }
+
+    /* Options button and dropdown */
+    .options-btn {
+      background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text);
+      padding: 6px 8px; display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .options-btn:hover { opacity: 0.8; }
+    .options-dropdown { position: absolute; top: 100%; right: 0; background: #0e1530; border: 1px solid var(--outline); border-radius: 6px;
+      min-width: 150px; display: none; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .options-dropdown.active { display: block; }
+    .options-item { display: block; width: 100%; text-align: left; padding: 12px 16px; background: none; border: none;
+      color: var(--accent); cursor: pointer; font-weight: 500; font-size: 15px; transition: background 0.2s; border-bottom: 1px solid var(--outline); }
+    .options-item:last-child { border-bottom: none; }
+    .options-item:hover { background: #132a47; }
+
+    /* Toast notification styles */
+    .toast-notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-weight: 500;
+      font-size: 16px;
+      z-index: 9999;
+      opacity: 1;
+      animation: slideInFade 0.3s ease-out forwards;
+      pointer-events: auto;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .toast-notification.fade-out {
+      animation: slideOutFade 0.3s ease-out forwards;
+    }
+    @keyframes slideInFade {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes slideOutFade {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+    }
     /* Mobile-friendly responsive design */
     @media (max-width: 768px) {
       col.col-name { width: 35%; }
@@ -63,20 +135,39 @@
       col.col-step { width: 22px; min-width: 22px; }
       thead th, tbody td, tfoot th { padding: 6px 4px; }
 
-      .step-btn { width: 18px; height: 18px; font-size: 11px; }
+      .step-btn { width: 20px; height: 20px; font-size: 13px; }
       .step-btn.minus { margin-right: 0px; }
       .step-btn.plus { margin-left: 0px; }
+
+      /* Toast notification adjustments for tablet */
+      .toast-notification {
+        bottom: 16px;
+        right: 16px;
+        padding: 14px 20px;
+        font-size: 14px;
+      }
     }
 
     @media (max-width: 480px) {
       col.col-name { width: 40%; }
       col.col-in, col.col-out, col.col-payout { width: 8ch; min-width: 8ch; }
-      col.col-step { width: 20px; min-width: 20px; }
+      col.col-step { width: 22px; min-width: 22px; }
       thead th, tbody td, tfoot th { padding: 5px 3px; }
 
-      .step-btn { width: 16px; height: 16px; font-size: 10px; }
+      .step-btn { width: 18px; height: 18px; font-size: 12px; }
       .step-btn.minus { margin-right: 0px; }
       .step-btn.plus { margin-left: 0px; }
+
+      /* Toast notification adjustments for mobile */
+      .toast-notification {
+        bottom: 12px;
+        right: 12px;
+        left: 12px;
+        padding: 12px 16px;
+        font-size: 13px;
+        border-radius: 6px;
+        text-align: center;
+      }
     }
   </style>
 </head>
@@ -85,6 +176,15 @@
     <h1>Poker Payout Calculator</h1>
     <div class="card">
       <div class="toolbar">
+        <button id="menuBtn" class="menu-btn" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div id="menuDropdown" class="menu-dropdown">
+          <a href="index.html">Poker Payout Calculator</a>
+          <a href="side-pot-calculator.html">Side Pot Calculator</a>
+        </div>
         <span aria-hidden="true" title="Poker" style="display:inline-flex;align-items:center;gap:8px">
           <svg width="22" height="22" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
             <title>Spade</title>
@@ -96,7 +196,10 @@
           <span class="status-text">Unbalanced</span>
         </div>
         <span class="spacer" style="flex: 1;"></span>
-        <a href="side-pot-calculator.html" id="spcLink" class="nav-link">Side Pot Calculator →</a>
+        <button id="optionsBtn" class="options-btn" aria-label="Options">⋮</button>
+        <div id="optionsDropdown" class="options-dropdown">
+          <button id="shareBtn" class="options-item" type="button">↗️ Share</button>
+        </div>
       </div>
 
       <div class="table-wrap">
@@ -120,7 +223,7 @@
                     <div class="spacer"></div>
                     <div class="buyin-container">
                       <label class="buyin-label" for="buyInInput">Buy-In</label>
-                      <input id="buyInInput" class="buyin-input num-input" type="text" inputmode="decimal" value="30.00" />
+                      <input id="buyInInput" class="buyin-input num-input" type="text" inputmode="numeric" value="30" />
                     </div>
                   </div>
                 </th>
@@ -161,11 +264,11 @@
 
   <footer></footer>
 
+  <script src="shared-data.js"></script>
   <script>
     (function(){
       const MAX_ROWS = 32;
       const STORAGE_KEY = 'poker-payout:v1';
-      const USUAL_SUSPECTS = ['Brian', 'Cahit', 'Colm', 'Cormac', 'Dillon', 'Euan', 'Evangelia', 'Ferhat', 'Hannan', 'James', 'Kevin', 'Kunal', 'Liam', 'Marcus', 'Mic', 'Muireann', 'Otto', 'Pawel', 'Scott', 'Tuhin'];
 
       const rowsTbody = document.getElementById('rows');
       const addRowBtn = document.getElementById('addRowBtn');
@@ -180,7 +283,12 @@
       const statusText = statusEl.querySelector('.status-text');
       const capNote = document.getElementById('rowCapNote');
 
+      // State variables for mode toggling
+      let deleteButtonMode = false; // Default to hidden
+      let checkboxesVisible = false; // Default to hidden
+
       function fmt(n){ return (Math.round(n*100)/100).toFixed(2).replace('-0.00','0.00'); }
+      function fmtInt(n){ return Math.round(n).toString().replace('-0','0'); }
       function parseNum(v){
         if(!v) return 0;
         let str = String(v).trim();
@@ -220,13 +328,6 @@
         td.appendChild(inp);return {td,inp};
       }
 
-      function focusNext(from){
-        const inputs=[...rowsTbody.querySelectorAll('.name-input,.num-input')];
-        const idx=inputs.indexOf(from);
-        if(idx===-1) return; const next=inputs[idx+1];
-        if(next){next.focus();if (next.select) next.select();}
-      }
-
       function attachFieldHandlers(nameInp, inInp, outInp){
         const updateZeroClass = () => {
           const inVal = parseNum(inInp.value);
@@ -241,8 +342,8 @@
         outInp.addEventListener('blur', updateZeroClass);
         updateZeroClass(); // Initial check
         for(const el of [nameInp,inInp,outInp]){
-          el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); focusNext(e.currentTarget); } });
           el.addEventListener('input', save);
+          el.addEventListener('click', ()=>{ el.select(); });
         }
       }
 
@@ -254,10 +355,20 @@
         const outDef  = values?.out ?? '';
         const settledDef = values?.settled ?? false;
 
-  // Name cell with checkbox
+  // Name cell with checkbox and delete button
   const nameCell=createCellWithInput('name-input','Player',{inputmode:'text',enterkeyhint:'next'}, nameDef);
   const wrapper = document.createElement('div');
-  wrapper.className = 'name-cell-wrapper hidden-checkboxes'; // Start with checkboxes hidden
+  // Set initial classes based on current mode
+  let wrapperClasses = 'name-cell-wrapper';
+  if(deleteButtonMode){
+    wrapperClasses += ' hidden-checkboxes';
+  } else {
+    wrapperClasses += ' hidden-delete-btns';
+    if(!checkboxesVisible){
+      wrapperClasses += ' hidden-checkboxes';
+    }
+  }
+  wrapper.className = wrapperClasses;
   wrapper.appendChild(nameCell.inp);
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
@@ -265,6 +376,32 @@
   checkbox.title = 'Settled';
   checkbox.addEventListener('change', save);
   wrapper.appendChild(checkbox);
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.className = 'delete-btn';
+  deleteBtn.textContent = '🗑';
+  deleteBtn.title = 'Delete player';
+  deleteBtn.setAttribute('aria-label', 'Delete player');
+  deleteBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const playerName = tr._refs.name.value.trim();
+    const index = Array.from(rowsTbody.children).indexOf(tr);
+    if(index !== -1){
+      rowsTbody.removeChild(tr);
+      // Add player back to available suspects only if they're in the original hardcoded list
+      if(playerName && USUAL_SUSPECTS.includes(playerName) && !availableSuspects.includes(playerName)){
+        availableSuspects.push(playerName);
+        availableSuspects.sort(); // Keep list alphabetically sorted
+        // Re-render the suspects list if it's visible
+        if(suspectsList && suspectsList.style.display === 'flex'){
+          const renderFn = window.renderSuspectsList;
+          if(renderFn) renderFn();
+        }
+      }
+      updateCapNote(); recalc(); save();
+    }
+  });
+  wrapper.appendChild(deleteBtn);
   nameCell.td.innerHTML = '';
   nameCell.td.appendChild(wrapper);
   tr.appendChild(nameCell.td);
@@ -276,7 +413,7 @@
   stepMinusTd.appendChild(minusBtn); tr.appendChild(stepMinusTd);
 
   // In cell
-  const inCell=createCellWithInput('num-input','0.00',{inputmode:'decimal',enterkeyhint:'next',pattern:"[0-9.,\\- ]*"}, inDef);
+  const inCell=createCellWithInput('num-input','0',{inputmode:'numeric',enterkeyhint:'next',pattern:"[0-9\\- ]*"}, inDef);
   tr.appendChild(inCell.td);
 
   // Plus step cell
@@ -301,7 +438,7 @@
           const cur = parseNum(inCell.inp.value);
           let newVal = cur + delta * buyNum;
           if(newVal < buyNum) newVal = buyNum;
-          inCell.inp.value = (Math.round(newVal*100)/100).toFixed(2);
+          inCell.inp.value = fmtInt(newVal);
           validateInput(inCell.inp);
           recalc(); save();
         }
@@ -335,9 +472,19 @@
       function clearTable(){
         rowsTbody.innerHTML='';
         for(let i=0;i<2;i++) addRow();
-        (function(){ var first = rowsTbody.querySelector('.name-input'); if (first && window.innerWidth >= 1024) first.focus(); })();
         // Reset available suspects list
         availableSuspects = [...USUAL_SUSPECTS];
+        // Reset delete and settle modes
+        deleteButtonMode = false;
+        checkboxesVisible = false;
+        // Hide delete buttons in all rows
+        for(const tr of rowsTbody.children){
+          const wrapper = tr.querySelector('.name-cell-wrapper');
+          if(wrapper){
+            wrapper.classList.add('hidden-delete-btns');
+            wrapper.classList.add('hidden-checkboxes');
+          }
+        }
         if(suspectsList && suspectsList.style.display === 'flex'){
           const renderFn = window.renderSuspectsList;
           if(renderFn) renderFn();
@@ -386,24 +533,67 @@
         for(const tr of rowsTbody.children){
           let inv=parseNum(tr._refs.in.value);
           let outv=parseNum(tr._refs.out.value);
-          // enforce minima: In >= buy-in (when buy-in is valid), Out >= 0
-          if(buyNum !== null && inv < buyNum){ inv = buyNum; tr._refs.in.value = fmt(inv); validateInput(tr._refs.in); }
+          // enforce minima: Out >= 0
           if(outv < 0){ outv = 0; tr._refs.out.value = fmt(outv); validateInput(tr._refs.out); }
           const payout = outv - inv; tr._refs.payout.textContent = fmt(payout);
           totalIn += inv; totalOut += outv;
         }
-        totalInEl.textContent=fmt(totalIn); totalOutEl.textContent=fmt(totalOut); totalPayoutEl.textContent=fmt(totalOut-totalIn);
+        totalInEl.textContent=fmtInt(totalIn); totalOutEl.textContent=fmt(totalOut); totalPayoutEl.textContent=fmt(totalOut-totalIn);
         const balanced=Math.abs(Math.round((totalOut-totalIn)*100))===0;
         statusEl.classList.toggle('ok',balanced); statusEl.classList.toggle('warn',!balanced);
         statusText.textContent=balanced?'Balanced':'Unbalanced';
       }
 
       // init
-      if(!restore()){
+      // Check for shared data in URL first
+      const urlParams = new URLSearchParams(window.location.search);
+      const sharedData = urlParams.get('share');
+
+      let dataLoaded = false;
+      if(sharedData){
+        try {
+          const data = JSON.parse(atob(sharedData));
+          if(data && Array.isArray(data.rows)){
+            rowsTbody.innerHTML='';
+            if(buyInInput && data.buyIn) buyInInput.value = data.buyIn;
+            for(const r of data.rows){ addRow({ name: r.name ?? '', in: r.in ?? '', out: r.out ?? '', settled: r.settled ?? false }); }
+            recalc();
+            dataLoaded = true;
+          }
+        } catch(e){ /* data might be corrupted */ }
+      }
+
+      if(!dataLoaded && !restore()){
         for(let i=0;i<2;i++) addRow();
       }
-      addRowBtn.addEventListener('click',()=>{const tr=addRow(); if(tr) { if(window.innerWidth >= 1024) tr._refs.name.focus(); }});
-      deleteRowBtn.addEventListener('click',deleteRow);
+      addRowBtn.addEventListener('click',()=>{const tr=addRow();});
+      deleteRowBtn.style.opacity = '1'; // Full brightness to match Add button
+      deleteRowBtn.addEventListener('click',()=>{
+        deleteButtonMode = !deleteButtonMode;
+        for(const tr of rowsTbody.children){
+          const wrapper = tr.querySelector('.name-cell-wrapper');
+          if(wrapper){
+            if(deleteButtonMode){
+              wrapper.classList.remove('hidden-delete-btns');
+              wrapper.classList.add('hidden-checkboxes');
+            } else {
+              wrapper.classList.add('hidden-delete-btns');
+              // When exiting delete mode, restore checkbox visibility based on checkboxesVisible flag
+              if(checkboxesVisible){
+                wrapper.classList.remove('hidden-checkboxes');
+              } else {
+                wrapper.classList.add('hidden-checkboxes');
+              }
+            }
+          }
+        }
+        // Update button style to show active state (but never gray out)
+        if(deleteButtonMode){
+          deleteRowBtn.style.opacity = '1';
+          settleBtn.style.opacity = '1';
+          checkboxesVisible = false;
+        }
+      });
       clearBtn.addEventListener('click',clearTable);
 
       let availableSuspects = [...USUAL_SUSPECTS];
@@ -430,12 +620,9 @@
               if(emptyRow){
                 // Fill empty row
                 emptyRow._refs.name.value = name;
-                // Only focus on desktop (width >= 1024px)
-                if(window.innerWidth >= 1024) emptyRow._refs.name.focus();
               } else {
                 // Add new row at bottom
                 const tr = addRow({name, in: '', out: ''});
-                if(tr && window.innerWidth >= 1024) tr._refs.name.focus();
               }
 
               // Remove from available list
@@ -470,23 +657,33 @@
           for(const tr of rowsTbody.children){
             try{
               const inEl = tr._refs && tr._refs.in;
-              if(inEl){ inEl.value = val!==null ? val : inEl.value; validateInput(inEl); }
+              if(inEl){ inEl.value = val!==null ? fmtInt(parseNum(val)) : inEl.value; validateInput(inEl); }
             }catch(e){}
           }
           save(); recalc();
         });
+        buyInInput.addEventListener('click', ()=>{ buyInInput.select(); });
       }
 
-      // Transfer player names when navigating to SPC
-      const spcLink = document.getElementById('spcLink');
+      // Settle button handler
       const settleBtn = document.getElementById('settleBtn');
-      let checkboxesVisible = false; // Default to hidden
 
       if(settleBtn){
-        // Set initial button opacity
-        settleBtn.style.opacity = '0.5';
+        // Set initial button opacity to match Add button brightness
+        settleBtn.style.opacity = '1';
 
         settleBtn.addEventListener('click', ()=>{
+          if(deleteButtonMode){
+            // If in delete mode, turn off delete mode first
+            deleteButtonMode = false;
+            for(const tr of rowsTbody.children){
+              const wrapper = tr.querySelector('.name-cell-wrapper');
+              if(wrapper){
+                wrapper.classList.add('hidden-delete-btns');
+              }
+            }
+            deleteRowBtn.style.opacity = '1';
+          }
           checkboxesVisible = !checkboxesVisible;
           for(const tr of rowsTbody.children){
             const wrapper = tr.querySelector('.name-cell-wrapper');
@@ -498,27 +695,143 @@
               }
             }
           }
-          // Update button style to show active state
-          if(checkboxesVisible){
-            settleBtn.style.opacity = '1';
-          } else {
-            settleBtn.style.opacity = '0.5';
-          }
+          // Update button style (but never gray out)
+          settleBtn.style.opacity = '1';
         });
       }
 
-      if(spcLink){
-        spcLink.addEventListener('click', (e)=>{
+      // Transfer player names when navigating to SPC via menu
+      const spcMenuLink = document.querySelector('#menuDropdown a[href="side-pot-calculator.html"]');
+      if(spcMenuLink){
+        spcMenuLink.addEventListener('click', (e)=>{
           e.preventDefault();
           const names = [];
           for(const tr of rowsTbody.children){
             const name = tr._refs.name.value.trim();
             if(name) names.push(name);
           }
-          console.log('Transferring names:', names);
           const params = new URLSearchParams();
           if(names.length > 0) params.set('names', names.join(','));
           window.location.href = 'side-pot-calculator.html' + (params.toString() ? '?' + params.toString() : '');
+        });
+      }
+
+      // Menu button handler
+      const menuBtn = document.getElementById('menuBtn');
+      const menuDropdown = document.getElementById('menuDropdown');
+      if(menuBtn && menuDropdown){
+        menuBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          // Close options dropdown when opening menu
+          const optionsDropdown = document.getElementById('optionsDropdown');
+          if(optionsDropdown && optionsDropdown.classList.contains('active')){
+            optionsDropdown.classList.remove('active');
+          }
+          menuDropdown.classList.toggle('active');
+        });
+        document.addEventListener('click', ()=>{
+          menuDropdown.classList.remove('active');
+        });
+      }
+
+      // Options button handler
+      const optionsBtn = document.getElementById('optionsBtn');
+      const optionsDropdown = document.getElementById('optionsDropdown');
+      const shareBtn = document.getElementById('shareBtn');
+
+      console.log('optionsBtn:', optionsBtn);
+      console.log('optionsDropdown:', optionsDropdown);
+      console.log('shareBtn:', shareBtn);
+
+      // Toast notification helper function - DEFINE FIRST
+      function showToastNotification(message){
+        console.log('showToastNotification called with:', message);
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        console.log('Toast added to DOM:', toast);
+
+        // Trigger animation
+        setTimeout(()=>{
+          toast.classList.add('fade-out');
+        }, 2000);
+
+        // Remove from DOM after animation
+        setTimeout(()=>{
+          if(document.body.contains(toast)){
+            document.body.removeChild(toast);
+          }
+        }, 2300);
+      }
+
+      if(optionsBtn && optionsDropdown){
+        optionsBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          // Close menu dropdown when opening options
+          const menuDropdownEl = document.getElementById('menuDropdown');
+          if(menuDropdownEl && menuDropdownEl.classList.contains('active')){
+            menuDropdownEl.classList.remove('active');
+          }
+          optionsDropdown.classList.toggle('active');
+        });
+        document.addEventListener('click', ()=>{
+          optionsDropdown.classList.remove('active');
+        });
+      }
+
+      if(shareBtn){
+        console.log('Share button found, attaching event listener');
+        shareBtn.addEventListener('click', ()=>{
+          console.log('Share button clicked!');
+          // Collect PPC data
+          const ppcData = serialize();
+          ppcData.buyIn = buyInInput ? buyInInput.value : '';
+
+          // Create share link with data encoded in URL
+          const shareUrl = window.location.href.split('?')[0] + '?share=' + btoa(JSON.stringify(ppcData));
+
+          // Copy to clipboard and show feedback
+          let copied = false;
+
+          // Try clipboard API first
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(shareUrl).then(()=>{
+              copied = true;
+              showToastNotification('Share link copied to clipboard!');
+            }).catch((err)=>{
+              console.log('Clipboard API failed, trying fallback:', err);
+              // Fallback: select text for manual copy
+              fallbackCopy(shareUrl);
+            });
+          } else {
+            // Fallback for browsers without clipboard API
+            fallbackCopy(shareUrl);
+          }
+
+          function fallbackCopy(url){
+            try {
+              const textArea = document.createElement('textarea');
+              textArea.value = url;
+              textArea.style.position = 'fixed';
+              textArea.style.left = '-999999px';
+              document.body.appendChild(textArea);
+              textArea.focus();
+              textArea.select();
+              const success = document.execCommand('copy');
+              document.body.removeChild(textArea);
+              if(success){
+                showToastNotification('Share link copied to clipboard!');
+              } else {
+                showToastNotification('Failed to copy link');
+              }
+            } catch(e){
+              console.error('Copy failed:', e);
+              showToastNotification('Failed to copy link');
+            }
+          }
+
+          optionsDropdown.classList.remove('active');
         });
       }
 
