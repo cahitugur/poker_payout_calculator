@@ -12,7 +12,30 @@
   <!-- Favicon: green spade icon (SVG for tabs); PNG touch icon will be generated at runtime -->
   <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" ry="12" fill="%230b1020"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="44" font-family="system-ui,Segoe UI,Roboto,Helvetica,Arial" fill="%2310b981">♠</text></svg>'/>
   <meta name="theme-color" content="#0b1020" />
-  <!-- Single-file shortcut support (best-effort): iOS/Android home-screen shortcuts look for apple-touch-icon -->
+  <!-- Single-file shortcut support (best-effort      // init
+      // Check for transferred names from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const transferredNames = urlParams.get('names');
+
+      if(transferredNames && !restore()){
+        // If names were transferred, create rows with those names
+        const names = transferredNames.split(',').filter(n => n.trim());
+        rowsTbody.innerHTML='';
+        rowsTbody.appendChild(createInitialPotRow(''));
+        if(names.length > 0){
+          for(const name of names){
+            addRow({ name: name.trim(), bet: '' });
+          }
+          // Remove transferred names from available suspects
+          availableSuspects = availableSuspects.filter(n => !names.includes(n));
+        } else {
+          for(let i=0;i<2;i++) addRow();
+        }
+      } else if(!restore()){
+        rowsTbody.appendChild(createInitialPotRow(''));
+        for(let i=0;i<2;i++) addRow();
+      }
+      recalc();-screen shortcuts look for apple-touch-icon -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="stylesheet" href="shared-styles.css" />

@@ -558,8 +558,7 @@
         buyInInput.addEventListener('click', ()=>{ buyInInput.select(); });
       }
 
-      // Transfer player names when navigating to SPC
-      const spcLink = document.getElementById('spcLink');
+      // Settle button handler
       const settleBtn = document.getElementById('settleBtn');
 
       if(settleBtn){
@@ -594,15 +593,16 @@
         });
       }
 
-      if(spcLink){
-        spcLink.addEventListener('click', (e)=>{
+      // Transfer player names when navigating to SPC via menu
+      const spcMenuLink = document.querySelector('#menuDropdown a[href="side-pot-calculator.html"]');
+      if(spcMenuLink){
+        spcMenuLink.addEventListener('click', (e)=>{
           e.preventDefault();
           const names = [];
           for(const tr of rowsTbody.children){
             const name = tr._refs.name.value.trim();
             if(name) names.push(name);
           }
-          console.log('Transferring names:', names);
           const params = new URLSearchParams();
           if(names.length > 0) params.set('names', names.join(','));
           window.location.href = 'side-pot-calculator.html' + (params.toString() ? '?' + params.toString() : '');
