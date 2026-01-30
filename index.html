@@ -221,13 +221,6 @@
         td.appendChild(inp);return {td,inp};
       }
 
-      function focusNext(from){
-        const inputs=[...rowsTbody.querySelectorAll('.name-input,.num-input')];
-        const idx=inputs.indexOf(from);
-        if(idx===-1) return; const next=inputs[idx+1];
-        if(next){next.focus();if (next.select) next.select();}
-      }
-
       function attachFieldHandlers(nameInp, inInp, outInp){
         const updateZeroClass = () => {
           const inVal = parseNum(inInp.value);
@@ -242,7 +235,6 @@
         outInp.addEventListener('blur', updateZeroClass);
         updateZeroClass(); // Initial check
         for(const el of [nameInp,inInp,outInp]){
-          el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); focusNext(e.currentTarget); } });
           el.addEventListener('input', save);
         }
       }
@@ -336,7 +328,6 @@
       function clearTable(){
         rowsTbody.innerHTML='';
         for(let i=0;i<2;i++) addRow();
-        (function(){ var first = rowsTbody.querySelector('.name-input'); if (first && window.innerWidth >= 1024) first.focus(); })();
         // Reset available suspects list
         availableSuspects = [...USUAL_SUSPECTS];
         if(suspectsList && suspectsList.style.display === 'flex'){
@@ -403,7 +394,7 @@
       if(!restore()){
         for(let i=0;i<2;i++) addRow();
       }
-      addRowBtn.addEventListener('click',()=>{const tr=addRow(); if(tr) { if(window.innerWidth >= 1024) tr._refs.name.focus(); }});
+      addRowBtn.addEventListener('click',()=>{const tr=addRow();});
       deleteRowBtn.addEventListener('click',deleteRow);
       clearBtn.addEventListener('click',clearTable);
 
@@ -431,12 +422,9 @@
               if(emptyRow){
                 // Fill empty row
                 emptyRow._refs.name.value = name;
-                // Only focus on desktop (width >= 1024px)
-                if(window.innerWidth >= 1024) emptyRow._refs.name.focus();
               } else {
                 // Add new row at bottom
                 const tr = addRow({name, in: '', out: ''});
-                if(tr && window.innerWidth >= 1024) tr._refs.name.focus();
               }
 
               // Remove from available list
