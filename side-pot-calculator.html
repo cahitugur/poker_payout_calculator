@@ -382,7 +382,8 @@
 
         // Create wrapper div with delete button
         const wrapper = document.createElement('div');
-        wrapper.className = 'name-cell-wrapper hidden-delete-btns';
+        // Set initial classes based on current delete mode
+        wrapper.className = deleteButtonMode ? 'name-cell-wrapper' : 'name-cell-wrapper hidden-delete-btns';
         wrapper.appendChild(nameCell.inp);
 
         const deleteBtn = document.createElement('button');
@@ -391,7 +392,19 @@
         deleteBtn.textContent = '🗑';
         deleteBtn.addEventListener('click', (e)=>{
           e.preventDefault();
+          const playerName = tr._refs.name.value.trim();
           rowsTbody.removeChild(tr);
+          // Add player back to available suspects only if they're in the original hardcoded list
+          if(playerName && USUAL_SUSPECTS.includes(playerName) && !availableSuspects.includes(playerName)){
+            availableSuspects.push(playerName);
+            availableSuspects.sort(); // Keep list alphabetically sorted
+            // Re-render the suspects list if it's visible
+            const suspectsList = document.getElementById('usualSuspectsList');
+            if(suspectsList && suspectsList.style.display === 'flex'){
+              const renderFn = window.renderSuspectsList;
+              if(renderFn) renderFn();
+            }
+          }
           recalc();
           save();
         });

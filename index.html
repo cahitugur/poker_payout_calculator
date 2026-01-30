@@ -184,6 +184,10 @@
       const statusText = statusEl.querySelector('.status-text');
       const capNote = document.getElementById('rowCapNote');
 
+      // State variables for mode toggling
+      let deleteButtonMode = false; // Default to hidden
+      let checkboxesVisible = false; // Default to hidden
+
       function fmt(n){ return (Math.round(n*100)/100).toFixed(2).replace('-0.00','0.00'); }
       function fmtInt(n){ return Math.round(n).toString().replace('-0','0'); }
       function parseNum(v){
@@ -255,7 +259,17 @@
   // Name cell with checkbox and delete button
   const nameCell=createCellWithInput('name-input','Player',{inputmode:'text',enterkeyhint:'next'}, nameDef);
   const wrapper = document.createElement('div');
-  wrapper.className = 'name-cell-wrapper hidden-checkboxes hidden-delete-btns'; // Start with both hidden
+  // Set initial classes based on current mode
+  let wrapperClasses = 'name-cell-wrapper';
+  if(deleteButtonMode){
+    wrapperClasses += ' hidden-checkboxes';
+  } else {
+    wrapperClasses += ' hidden-delete-btns';
+    if(!checkboxesVisible){
+      wrapperClasses += ' hidden-checkboxes';
+    }
+  }
+  wrapper.className = wrapperClasses;
   wrapper.appendChild(nameCell.inp);
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
@@ -271,9 +285,20 @@
   deleteBtn.setAttribute('aria-label', 'Delete player');
   deleteBtn.addEventListener('click', (e)=>{
     e.preventDefault();
+    const playerName = tr._refs.name.value.trim();
     const index = Array.from(rowsTbody.children).indexOf(tr);
     if(index !== -1){
       rowsTbody.removeChild(tr);
+      // Add player back to available suspects only if they're in the original hardcoded list
+      if(playerName && USUAL_SUSPECTS.includes(playerName) && !availableSuspects.includes(playerName)){
+        availableSuspects.push(playerName);
+        availableSuspects.sort(); // Keep list alphabetically sorted
+        // Re-render the suspects list if it's visible
+        if(suspectsList && suspectsList.style.display === 'flex'){
+          const renderFn = window.renderSuspectsList;
+          if(renderFn) renderFn();
+        }
+      }
       updateCapNote(); recalc(); save();
     }
   });
@@ -515,8 +540,6 @@
       // Transfer player names when navigating to SPC
       const spcLink = document.getElementById('spcLink');
       const settleBtn = document.getElementById('settleBtn');
-      let checkboxesVisible = false; // Default to hidden
-      let deleteButtonMode = false; // Default to hidden
 
       if(settleBtn){
         // Set initial button opacity to match Add button brightness
