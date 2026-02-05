@@ -46,6 +46,77 @@ function initSidePotCalculator() {
     return Number.isFinite(num) ? num : 0;
   }
 
+  function toBase64Url(bytes) {
+    let binary = '';
+    bytes.forEach((b) => {
+      binary += String.fromCharCode(b);
+    });
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  }
+
+  function fromBase64Url(str) {
+    const normalized = str.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  async function compressString(value) {
+    if (!('CompressionStream' in window)) return null;
+    const encoder = new TextEncoder();
+    const stream = new Blob([encoder.encode(value)]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buffer = await new Response(stream).arrayBuffer();
+    return new Uint8Array(buffer);
+  }
+
+  async function decompressToString(bytes) {
+    if (!('DecompressionStream' in window)) return null;
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const buffer = await new Response(stream).arrayBuffer();
+    return new TextDecoder().decode(buffer);
+  }
+
+  async function encodeShareData(data) {
+    const rows = (data.rows || []).map((row) => [row.name || '', row.bet || '']);
+    const compact = { v: 1, b: data.boards || '1', i: data.initialPot || '0', r: rows };
+    const json = JSON.stringify(compact);
+    const compressed = await compressString(json);
+    if (compressed) return `z${toBase64Url(compressed)}`;
+    return `j${toBase64Url(new TextEncoder().encode(json))}`;
+  }
+
+  async function decodeShareData(encoded) {
+    let mode = encoded[0];
+    let payload = encoded;
+    if (mode === 'z' || mode === 'j') {
+      payload = encoded.slice(1);
+    } else {
+      mode = 'j';
+    }
+
+    try {
+      const bytes = fromBase64Url(payload);
+      const text = mode === 'z' ? await decompressToString(bytes) : new TextDecoder().decode(bytes);
+      if (!text) throw new Error('Decode failed');
+      const raw = JSON.parse(text);
+      if (raw && raw.v === 1 && Array.isArray(raw.r)) {
+        return {
+          rows: raw.r.map((row) => ({ name: row?.[0] ?? '', bet: row?.[1] ?? '' })),
+          boards: raw.b ?? '1',
+          initialPot: raw.i ?? '0'
+        };
+      }
+      return raw;
+    } catch (e) {
+      const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+      const raw = JSON.parse(atob(padded));
+      return raw;
+    }
+  }
+
   function validateInput(i) {
     const raw = i.value.trim();
     if (raw === '') {
@@ -727,21 +798,32 @@ function initSidePotCalculator() {
 
   const shareBtn = document.getElementById('shareBtn');
   if (shareBtn) {
-    shareBtn.addEventListener('click', () => {
+    shareBtn.addEventListener('click', async () => {
       try {
         const spcData = serialize();
-        const encoded = btoa(JSON.stringify(spcData));
-        const shareUrl = window.location.href.split('?')[0] + '?share=' + encoded;
+        const encoded = await encodeShareData(spcData);
+        const shareUrl = window.location.href.split('?')[0] + '?s=' + encoded;
+        const linkLabel = 'Side Pot Share';
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(shareUrl).then(
-            () => {
-              showToastNotification('Share link copied to clipboard!');
-            },
-            () => {
-              fallbackCopy(shareUrl);
-            }
-          );
+        if (navigator.clipboard) {
+          const html = `<a href="${shareUrl}">${linkLabel}</a>`;
+          if (navigator.clipboard.write) {
+            const item = new ClipboardItem({
+              'text/html': new Blob([html], { type: 'text/html' }),
+              'text/plain': new Blob([shareUrl], { type: 'text/plain' })
+            });
+            navigator.clipboard.write([item]).then(
+              () => showToastNotification('Share link copied to clipboard!'),
+              () => fallbackCopy(shareUrl)
+            );
+          } else if (navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareUrl).then(
+              () => showToastNotification('Share link copied to clipboard!'),
+              () => fallbackCopy(shareUrl)
+            );
+          } else {
+            fallbackCopy(shareUrl);
+          }
         } else {
           fallbackCopy(shareUrl);
         }
@@ -778,58 +860,62 @@ function initSidePotCalculator() {
     if (optionsDropdown) optionsDropdown.classList.remove('active');
   });
 
-  const shareParam = urlParams.get('share');
-  if (shareParam && !transferredNames) {
-    try {
-      const decoded = atob(shareParam);
-      const sharedData = JSON.parse(decoded);
-      if (sharedData && sharedData.rows && Array.isArray(sharedData.rows)) {
-        rowsTbody.innerHTML = '';
-        if (boardsInput && sharedData.boards) boardsInput.value = sharedData.boards;
-        rowsTbody.appendChild(createInitialPotRow(sharedData.initialPot || ''));
-        for (const r of sharedData.rows) {
-          addRow({ name: r.name ?? '', bet: r.bet ?? '' });
-        }
-        const usedNames = sharedData.rows.map((r) => r.name).filter((n) => n && USUAL_SUSPECTS.includes(n));
-        availableSuspects = USUAL_SUSPECTS.filter((n) => !usedNames.includes(n));
-        recalc();
-      }
-    } catch (e) {
-      if (!restore()) {
-        rowsTbody.appendChild(createInitialPotRow(''));
-        for (let i = 0; i < 2; i++) addRow();
-      }
-    }
-  } else if (shareParam && transferredNames) {
-    try {
-      const decoded = atob(shareParam);
-      const sharedData = JSON.parse(decoded);
-      if (sharedData && sharedData.rows && Array.isArray(sharedData.rows)) {
-        rowsTbody.innerHTML = '';
-        if (boardsInput && sharedData.boards) boardsInput.value = sharedData.boards;
-        rowsTbody.appendChild(createInitialPotRow(sharedData.initialPot || ''));
-        for (const r of sharedData.rows) {
-          addRow({ name: r.name ?? '', bet: r.bet ?? '' });
-        }
-        const usedNames = sharedData.rows.map((r) => r.name).filter((n) => n && USUAL_SUSPECTS.includes(n));
-        availableSuspects = USUAL_SUSPECTS.filter((n) => !usedNames.includes(n));
-        recalc();
-      }
-    } catch (e) {
-      if (transferredNames && !restore()) {
-        const names = transferredNames.split(',').filter((n) => n.trim());
-        rowsTbody.innerHTML = '';
-        rowsTbody.appendChild(createInitialPotRow(''));
-        if (names.length > 0) {
-          for (const name of names) {
-            addRow({ name: name.trim(), bet: '' });
+  async function loadSharedDataFromUrl() {
+    const shareParam = urlParams.get('s') || urlParams.get('share');
+    if (!shareParam) return;
+
+    if (shareParam && !transferredNames) {
+      try {
+        const sharedData = await decodeShareData(shareParam);
+        if (sharedData && sharedData.rows && Array.isArray(sharedData.rows)) {
+          rowsTbody.innerHTML = '';
+          if (boardsInput && sharedData.boards) boardsInput.value = sharedData.boards;
+          rowsTbody.appendChild(createInitialPotRow(sharedData.initialPot || ''));
+          for (const r of sharedData.rows) {
+            addRow({ name: r.name ?? '', bet: r.bet ?? '' });
           }
-        } else {
+          const usedNames = sharedData.rows.map((r) => r.name).filter((n) => n && USUAL_SUSPECTS.includes(n));
+          availableSuspects = USUAL_SUSPECTS.filter((n) => !usedNames.includes(n));
+          recalc();
+        }
+      } catch (e) {
+        if (!restore()) {
+          rowsTbody.appendChild(createInitialPotRow(''));
           for (let i = 0; i < 2; i++) addRow();
+        }
+      }
+    } else if (shareParam && transferredNames) {
+      try {
+        const sharedData = await decodeShareData(shareParam);
+        if (sharedData && sharedData.rows && Array.isArray(sharedData.rows)) {
+          rowsTbody.innerHTML = '';
+          if (boardsInput && sharedData.boards) boardsInput.value = sharedData.boards;
+          rowsTbody.appendChild(createInitialPotRow(sharedData.initialPot || ''));
+          for (const r of sharedData.rows) {
+            addRow({ name: r.name ?? '', bet: r.bet ?? '' });
+          }
+          const usedNames = sharedData.rows.map((r) => r.name).filter((n) => n && USUAL_SUSPECTS.includes(n));
+          availableSuspects = USUAL_SUSPECTS.filter((n) => !usedNames.includes(n));
+          recalc();
+        }
+      } catch (e) {
+        if (transferredNames && !restore()) {
+          const names = transferredNames.split(',').filter((n) => n.trim());
+          rowsTbody.innerHTML = '';
+          rowsTbody.appendChild(createInitialPotRow(''));
+          if (names.length > 0) {
+            for (const name of names) {
+              addRow({ name: name.trim(), bet: '' });
+            }
+          } else {
+            for (let i = 0; i < 2; i++) addRow();
+          }
         }
       }
     }
   }
+
+  loadSharedDataFromUrl();
 
   recalc();
 }

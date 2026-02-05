@@ -50,6 +50,81 @@ function initPayoutCalculator() {
     return Number.isFinite(num) ? num : 0;
   }
 
+  function toBase64Url(bytes) {
+    let binary = '';
+    bytes.forEach((b) => {
+      binary += String.fromCharCode(b);
+    });
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  }
+
+  function fromBase64Url(str) {
+    const normalized = str.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  async function compressString(value) {
+    if (!('CompressionStream' in window)) return null;
+    const encoder = new TextEncoder();
+    const stream = new Blob([encoder.encode(value)]).stream().pipeThrough(new CompressionStream('gzip'));
+    const buffer = await new Response(stream).arrayBuffer();
+    return new Uint8Array(buffer);
+  }
+
+  async function decompressToString(bytes) {
+    if (!('DecompressionStream' in window)) return null;
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const buffer = await new Response(stream).arrayBuffer();
+    return new TextDecoder().decode(buffer);
+  }
+
+  async function encodeShareData(data) {
+    const rows = (data.rows || []).map((row) => [row.name || '', row.in || '', row.out || '', row.settled ? 1 : 0]);
+    const compact = { v: 1, b: data.buyIn || '', r: rows };
+    const json = JSON.stringify(compact);
+    const compressed = await compressString(json);
+    if (compressed) return `z${toBase64Url(compressed)}`;
+    return `j${toBase64Url(new TextEncoder().encode(json))}`;
+  }
+
+  async function decodeShareData(encoded) {
+    let mode = encoded[0];
+    let payload = encoded;
+    if (mode === 'z' || mode === 'j') {
+      payload = encoded.slice(1);
+    } else {
+      mode = 'j';
+    }
+
+    try {
+      const bytes = fromBase64Url(payload);
+      const text = mode === 'z' ? await decompressToString(bytes) : new TextDecoder().decode(bytes);
+      if (!text) throw new Error('Decode failed');
+      const raw = JSON.parse(text);
+      if (raw && raw.v === 1 && Array.isArray(raw.r)) {
+        return {
+          rows: raw.r.map((row) => ({
+            name: row?.[0] ?? '',
+            in: row?.[1] ?? '',
+            out: row?.[2] ?? '',
+            settled: Boolean(row?.[3])
+          })),
+          buyIn: raw.b ?? ''
+        };
+      }
+      return raw;
+    } catch (e) {
+      const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
+      const raw = JSON.parse(atob(padded));
+      return raw;
+    }
+  }
+
   function validateInput(i) {
     const raw = i.value.trim();
     if (raw === '') {
@@ -335,12 +410,12 @@ function initPayoutCalculator() {
   }
 
   const urlParams = new URLSearchParams(window.location.search);
-  const sharedData = urlParams.get('share');
 
-  let dataLoaded = false;
-  if (sharedData) {
+  async function loadSharedDataFromUrl() {
+    const sharedData = urlParams.get('s') || urlParams.get('share');
+    if (!sharedData) return false;
     try {
-      const data = JSON.parse(atob(sharedData));
+      const data = await decodeShareData(sharedData);
       if (data && Array.isArray(data.rows)) {
         rowsTbody.innerHTML = '';
         if (buyInInput && data.buyIn) buyInInput.value = data.buyIn;
@@ -348,16 +423,19 @@ function initPayoutCalculator() {
           addRow({ name: r.name ?? '', in: r.in ?? '', out: r.out ?? '', settled: r.settled ?? false });
         }
         recalc();
-        dataLoaded = true;
+        return true;
       }
     } catch (e) {
       /* data might be corrupted */
     }
+    return false;
   }
 
-  if (!dataLoaded && !restore()) {
-    for (let i = 0; i < 2; i++) addRow();
-  }
+  loadSharedDataFromUrl().then((dataLoaded) => {
+    if (!dataLoaded && !restore()) {
+      for (let i = 0; i < 2; i++) addRow();
+    }
+  });
 
   addRowBtn.addEventListener('click', () => {
     addRow();
@@ -565,20 +643,32 @@ function initPayoutCalculator() {
   }
 
   if (shareBtn) {
-    shareBtn.addEventListener('click', () => {
+    shareBtn.addEventListener('click', async () => {
       const ppcData = serialize();
       ppcData.buyIn = buyInInput ? buyInInput.value : '';
-      const shareUrl = window.location.href.split('?')[0] + '?share=' + btoa(JSON.stringify(ppcData));
+      const encoded = await encodeShareData(ppcData);
+      const shareUrl = window.location.href.split('?')[0] + '?s=' + encoded;
+      const linkLabel = 'Poker Payout Share';
 
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(shareUrl).then(
-          () => {
-            showToastNotification('Share link copied to clipboard!');
-          },
-          () => {
-            fallbackCopy(shareUrl);
-          }
-        );
+      if (navigator.clipboard) {
+        const html = `<a href="${shareUrl}">${linkLabel}</a>`;
+        if (navigator.clipboard.write) {
+          const item = new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([shareUrl], { type: 'text/plain' })
+          });
+          navigator.clipboard.write([item]).then(
+            () => showToastNotification('Share link copied to clipboard!'),
+            () => fallbackCopy(shareUrl)
+          );
+        } else if (navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(shareUrl).then(
+            () => showToastNotification('Share link copied to clipboard!'),
+            () => fallbackCopy(shareUrl)
+          );
+        } else {
+          fallbackCopy(shareUrl);
+        }
       } else {
         fallbackCopy(shareUrl);
       }
