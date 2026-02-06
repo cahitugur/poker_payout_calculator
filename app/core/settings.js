@@ -5,7 +5,14 @@
 */
 
 import { DEFAULT_USUAL_SUSPECTS } from './shared-data.js';
-import { loadSettingsData, normalizeSettingsData, saveSettingsData } from './settings-store.js';
+import {
+  loadSettingsData,
+  normalizeSettingsData,
+  openSettingsFileForImport,
+  readSettingsFromHandle,
+  saveSettingsData,
+  saveSettingsDataAs
+} from './settings-store.js';
 
 export function initSettings({ showToast } = {}) {
   const settingsBtn = document.getElementById('settingsBtn');
@@ -14,15 +21,19 @@ export function initSettings({ showToast } = {}) {
   const profileSettingsBtn = document.getElementById('profileSettingsBtn');
   const profileModal = document.getElementById('profileModal');
   const profileCloseBtn = document.getElementById('profileCloseBtn');
+  const profileBackBtn = document.getElementById('profileBackBtn');
   const profileNameInput = document.getElementById('profileNameInput');
   const profileRevtagInput = document.getElementById('profileRevtagInput');
   const profileSaveBtn = document.getElementById('profileSaveBtn');
   const usualSuspectsSettingsBtn = document.getElementById('usualSuspectsSettingsBtn');
   const usualSuspectsModal = document.getElementById('usualSuspectsModal');
   const usualSuspectsCloseBtn = document.getElementById('usualSuspectsCloseBtn');
+  const usualSuspectsBackBtn = document.getElementById('usualSuspectsBackBtn');
   const usualSuspectsTableBody = document.getElementById('usualSuspectsTableBody');
   const addSuspectBtn = document.getElementById('addSuspectBtn');
   const suspectsSaveBtn = document.getElementById('suspectsSaveBtn');
+  const importSettingsBtn = document.getElementById('importSettingsBtn');
+  const exportSettingsBtn = document.getElementById('exportSettingsBtn');
   const menuDropdown = document.getElementById('menuDropdown');
 
   if (!settingsBtn && !settingsModal && !profileModal) return;
@@ -35,6 +46,14 @@ export function initSettings({ showToast } = {}) {
   };
 
   const loadSettings = async () => normalizeSettingsData(await loadSettingsData(), defaultSuspects);
+
+  const buildSettingsPayload = async () => {
+    const existing = await loadSettings();
+    return {
+      profile: existing.profile,
+      usualSuspects: existing.usualSuspects
+    };
+  };
 
   const loadProfileSettings = async () => {
     if (!profileNameInput || !profileRevtagInput) return;
@@ -210,6 +229,49 @@ export function initSettings({ showToast } = {}) {
     }
   };
 
+  const importSettings = async () => {
+    try {
+      const handle = await openSettingsFileForImport();
+      if (!handle) {
+        notify('File picker not supported in this browser');
+        return;
+      }
+      const raw = await readSettingsFromHandle(handle);
+      const normalized = normalizeSettingsData(raw, defaultSuspects);
+      await saveSettingsData({
+        profile: normalized.profile,
+        usualSuspects: normalized.usualSuspects
+      });
+      if (profileModal?.classList.contains('active')) {
+        profileNameInput.value = normalized.profile.name;
+        profileRevtagInput.value = normalized.profile.revtag;
+      }
+      if (usualSuspectsModal?.classList.contains('active')) {
+        renderUsualSuspects(normalized.usualSuspects);
+      }
+      window.dispatchEvent(new CustomEvent('usual-suspects-updated', { detail: { usualSuspects: normalized.usualSuspects } }));
+      notify('Settings imported');
+    } catch (e) {
+      notify('Unable to import settings');
+    }
+  };
+
+  const exportSettings = async () => {
+    try {
+      const payload = await buildSettingsPayload();
+      await saveSettingsDataAs(payload);
+      notify('Settings exported');
+    } catch (e) {
+      if (e && e.message === 'FilePickerUnavailable') {
+        notify('File picker not supported in this browser');
+      } else if (e && e.message === 'FilePermissionDenied') {
+        notify('Permission denied for file save');
+      } else {
+        notify('Unable to export settings');
+      }
+    }
+  };
+
   if (settingsBtn) {
     settingsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -234,6 +296,13 @@ export function initSettings({ showToast } = {}) {
     profileCloseBtn.addEventListener('click', closeProfileModal);
   }
 
+  if (profileBackBtn) {
+    profileBackBtn.addEventListener('click', () => {
+      closeProfileModal();
+      openSettingsModal();
+    });
+  }
+
   if (profileSaveBtn) {
     profileSaveBtn.addEventListener('click', () => {
       saveProfileSettings().then((didSave) => {
@@ -253,6 +322,13 @@ export function initSettings({ showToast } = {}) {
     usualSuspectsCloseBtn.addEventListener('click', closeUsualSuspectsModal);
   }
 
+  if (usualSuspectsBackBtn) {
+    usualSuspectsBackBtn.addEventListener('click', () => {
+      closeUsualSuspectsModal();
+      openSettingsModal();
+    });
+  }
+
   if (addSuspectBtn) {
     addSuspectBtn.addEventListener('click', () => addSuspectRow({ name: '', revtag: '' }));
   }
@@ -262,6 +338,18 @@ export function initSettings({ showToast } = {}) {
       saveUsualSuspectsSettings().then((didSave) => {
         if (didSave) closeUsualSuspectsModal();
       });
+    });
+  }
+
+  if (importSettingsBtn) {
+    importSettingsBtn.addEventListener('click', () => {
+      importSettings();
+    });
+  }
+
+  if (exportSettingsBtn) {
+    exportSettingsBtn.addEventListener('click', () => {
+      exportSettings();
     });
   }
 

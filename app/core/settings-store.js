@@ -82,6 +82,44 @@ const getOrRequestHandle = async (mode = 'readwrite') => {
   return handle;
 };
 
+export const openSettingsFileForImport = async () => {
+  if (!window.showOpenFilePicker) return null;
+  const [handle] = await window.showOpenFilePicker({
+    types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+    multiple: false
+  });
+  if (handle) {
+    await storeHandle(handle);
+  }
+  return handle || null;
+};
+
+export const readSettingsFromHandle = async (handle) => {
+  if (!handle) return null;
+  const file = await handle.getFile();
+  const text = await file.text();
+  if (!text) return null;
+  return JSON.parse(text);
+};
+
+export const saveSettingsDataAs = async (payload) => {
+  if (!window.showSaveFilePicker) {
+    throw new Error('FilePickerUnavailable');
+  }
+  const handle = await window.showSaveFilePicker({
+    suggestedName: SETTINGS_FILENAME,
+    types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+  });
+  const ok = await ensureHandlePermission(handle, 'readwrite');
+  if (!ok) {
+    throw new Error('FilePermissionDenied');
+  }
+  await storeHandle(handle);
+  const writable = await handle.createWritable();
+  await writable.write(JSON.stringify(payload, null, 2));
+  await writable.close();
+};
+
 export const normalizeSettingsData = (data, defaultSuspects = []) => {
   const profile = {
     name: data?.profile?.name ?? '',

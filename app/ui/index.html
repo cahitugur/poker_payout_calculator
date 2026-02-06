@@ -128,6 +128,10 @@
             <span class="settings-item-meta">Manage quick-add players</span>
           </button>
         </div>
+        <div class="settings-actions settings-actions-split">
+          <button id="importSettingsBtn" class="btn btn-secondary" type="button">⬇️ Import</button>
+          <button id="exportSettingsBtn" class="btn btn-secondary" type="button">⬆️ Export</button>
+        </div>
       </div>
     </div>
   </div>
@@ -136,6 +140,7 @@
     <div class="modal-overlay" data-close="true"></div>
     <div class="modal-content" role="document">
       <div class="modal-header">
+        <button id="profileBackBtn" class="modal-back" type="button" aria-label="Back to settings">←</button>
         <h2 id="profileTitle">Profile</h2>
         <button id="profileCloseBtn" class="modal-close" type="button" aria-label="Close profile">✕</button>
       </div>
@@ -162,6 +167,7 @@
     <div class="modal-overlay" data-close="true"></div>
     <div class="modal-content" role="document">
       <div class="modal-header">
+        <button id="usualSuspectsBackBtn" class="modal-back" type="button" aria-label="Back to settings">←</button>
         <h2 id="usualSuspectsTitle">Usual Suspects</h2>
         <button id="usualSuspectsCloseBtn" class="modal-close" type="button" aria-label="Close usual suspects">✕</button>
       </div>
