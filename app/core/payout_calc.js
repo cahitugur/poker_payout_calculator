@@ -5,6 +5,8 @@
 
 import { USUAL_SUSPECTS } from './shared-data.js';
 import { initFooter, initSharedIcons } from './shared-icons.js';
+import { initSettings } from './settings.js';
+import { loadSettingsData, normalizeSettingsData } from './settings-store.js';
 
 function initPayoutCalculator() {
   const root = document.querySelector('[data-app="payout"]');
@@ -224,7 +226,7 @@ function initPayoutCalculator() {
       const index = Array.from(rowsTbody.children).indexOf(tr);
       if (index !== -1) {
         rowsTbody.removeChild(tr);
-        if (playerName && USUAL_SUSPECTS.includes(playerName) && !availableSuspects.includes(playerName)) {
+        if (playerName && usualSuspects.includes(playerName) && !availableSuspects.includes(playerName)) {
           availableSuspects.push(playerName);
           availableSuspects.sort();
           if (suspectsList && suspectsList.style.display === 'flex') {
@@ -324,7 +326,7 @@ function initPayoutCalculator() {
   function clearTable() {
     rowsTbody.innerHTML = '';
     for (let i = 0; i < 2; i++) addRow();
-    availableSuspects = [...USUAL_SUSPECTS];
+  availableSuspects = [...usualSuspects];
     deleteButtonMode = false;
     checkboxesVisible = false;
     for (const tr of rowsTbody.children) {
@@ -469,7 +471,8 @@ function initPayoutCalculator() {
 
   clearBtn.addEventListener('click', clearTable);
 
-  let availableSuspects = [...USUAL_SUSPECTS];
+  let usualSuspects = [...USUAL_SUSPECTS];
+  let availableSuspects = [...usualSuspects];
   const suspectsList = document.getElementById('usualSuspectsList');
 
   if (usualSuspectsBtn) {
@@ -520,6 +523,39 @@ function initPayoutCalculator() {
       }
     });
   }
+
+  const refreshAvailableSuspects = () => {
+    const usedNames = new Set();
+    for (const tr of rowsTbody.children) {
+      const name = tr._refs?.name?.value?.trim();
+      if (name) usedNames.add(name);
+    }
+    availableSuspects = usualSuspects.filter((name) => !usedNames.has(name));
+    if (suspectsList && suspectsList.style.display === 'flex') {
+      const renderFn = window.renderSuspectsList;
+      if (renderFn) renderFn();
+    }
+  };
+
+  const loadUsualSuspects = async () => {
+    try {
+      const data = normalizeSettingsData(await loadSettingsData(), USUAL_SUSPECTS.map((name) => ({ name, revtag: '' })));
+      usualSuspects = data.usualSuspects.map((item) => item.name);
+    } catch (e) {
+      usualSuspects = [...USUAL_SUSPECTS];
+    }
+    refreshAvailableSuspects();
+  };
+
+  window.addEventListener('usual-suspects-updated', (event) => {
+    const detail = event.detail;
+    if (detail?.usualSuspects) {
+      usualSuspects = detail.usualSuspects.map((item) => item.name);
+      refreshAvailableSuspects();
+    }
+  });
+
+  loadUsualSuspects();
 
   if (buyInInput) {
     buyInInput.addEventListener('input', () => {
@@ -627,6 +663,8 @@ function initPayoutCalculator() {
       }
     }, 2300);
   }
+
+  initSettings({ showToast: showToastNotification });
 
   if (optionsBtn && optionsDropdown) {
     optionsBtn.addEventListener('click', (e) => {

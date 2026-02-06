@@ -27,6 +27,7 @@
         <div id="menuDropdown" class="menu-dropdown">
           <a href="index.html">Poker Payout Calculator</a>
           <a href="side-pot.html">Side Pot Calculator</a>
+          <a id="settingsBtn" href="#">Settings</a>
         </div>
         <span class="toolbar-icon" aria-hidden="true" title="Poker">
           <svg width="22" height="22" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
@@ -107,6 +108,84 @@
   </div>
 
   <footer></footer>
+
+  <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true">
+    <div class="modal-overlay" data-close="true"></div>
+    <div class="modal-content" role="document">
+      <div class="modal-header">
+        <h2 id="settingsTitle">Settings</h2>
+        <button id="settingsCloseBtn" class="modal-close" type="button" aria-label="Close settings">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted-text">Choose a settings category.</p>
+        <div class="settings-list">
+          <button id="profileSettingsBtn" class="settings-item-btn" type="button">
+            <span>Profile</span>
+            <span class="settings-item-meta">Edit name and revtag</span>
+          </button>
+          <button id="usualSuspectsSettingsBtn" class="settings-item-btn" type="button">
+            <span>Usual Suspects</span>
+            <span class="settings-item-meta">Manage quick-add players</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="profileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="profileTitle" aria-hidden="true">
+    <div class="modal-overlay" data-close="true"></div>
+    <div class="modal-content" role="document">
+      <div class="modal-header">
+        <h2 id="profileTitle">Profile</h2>
+        <button id="profileCloseBtn" class="modal-close" type="button" aria-label="Close profile">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted-text">Profile settings are stored on this device.</p>
+        <div class="settings-section">
+          <label class="settings-field">
+            <span class="settings-label">Name</span>
+            <input id="profileNameInput" class="input-field" type="text" placeholder="Your name" autocomplete="name" />
+          </label>
+          <label class="settings-field">
+            <span class="settings-label">Revtag</span>
+            <input id="profileRevtagInput" class="input-field" type="text" placeholder="e.g. @yourtag" />
+          </label>
+        </div>
+        <div class="settings-actions">
+          <button id="profileSaveBtn" class="btn btn-primary" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="usualSuspectsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="usualSuspectsTitle" aria-hidden="true">
+    <div class="modal-overlay" data-close="true"></div>
+    <div class="modal-content" role="document">
+      <div class="modal-header">
+        <h2 id="usualSuspectsTitle">Usual Suspects</h2>
+        <button id="usualSuspectsCloseBtn" class="modal-close" type="button" aria-label="Close usual suspects">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted-text">Add players for quick access in the calculator.</p>
+        <div class="settings-table-wrapper">
+          <table class="settings-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Revtag</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="usualSuspectsTableBody"></tbody>
+          </table>
+        </div>
+        <div class="settings-actions settings-actions-split">
+          <button id="addSuspectBtn" class="btn btn-secondary" type="button">➕ Add</button>
+          <button id="suspectsSaveBtn" class="btn btn-primary" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="../core/payout_calc.js"></script>
 </body>
