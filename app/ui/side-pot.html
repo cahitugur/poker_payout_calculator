@@ -136,8 +136,22 @@
           </button>
         </div>
         <div class="settings-actions settings-actions-split">
-          <button id="importSettingsBtn" class="btn btn-secondary" type="button">⬇️ Import</button>
-          <button id="exportSettingsBtn" class="btn btn-secondary" type="button">⬆️ Export</button>
+          <button id="importSettingsBtn" class="btn btn-secondary settings-action-btn" type="button">
+            <svg class="settings-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v10" />
+              <path d="M7 9l5 5 5-5" />
+              <path d="M5 20h14" />
+            </svg>
+            <span>Import</span>
+          </button>
+          <button id="exportSettingsBtn" class="btn btn-secondary settings-action-btn" type="button">
+            <svg class="settings-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 21V11" />
+              <path d="M7 15l5-5 5 5" />
+              <path d="M5 4h14" />
+            </svg>
+            <span>Export</span>
+          </button>
         </div>
       </div>
     </div>
@@ -147,7 +161,11 @@
     <div class="modal-overlay" data-close="true"></div>
     <div class="modal-content" role="document">
       <div class="modal-header">
-        <button id="profileBackBtn" class="modal-back" type="button" aria-label="Back to settings">←</button>
+        <button id="profileBackBtn" class="modal-back" type="button" aria-label="Back to settings">
+          <svg class="modal-back-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
         <h2 id="profileTitle">Profile</h2>
         <button id="profileCloseBtn" class="modal-close" type="button" aria-label="Close profile">✕</button>
       </div>
@@ -174,7 +192,11 @@
     <div class="modal-overlay" data-close="true"></div>
     <div class="modal-content" role="document">
       <div class="modal-header">
-        <button id="usualSuspectsBackBtn" class="modal-back" type="button" aria-label="Back to settings">←</button>
+        <button id="usualSuspectsBackBtn" class="modal-back" type="button" aria-label="Back to settings">
+          <svg class="modal-back-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
         <h2 id="usualSuspectsTitle">Usual Suspects</h2>
         <button id="usualSuspectsCloseBtn" class="modal-close" type="button" aria-label="Close usual suspects">✕</button>
       </div>
