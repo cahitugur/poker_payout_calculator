@@ -33,6 +33,7 @@ function initPayoutCalculator() {
 
   let deleteButtonMode = false;
   let checkboxesVisible = false;
+  let tableLocked = false;
 
   function fmt(n) {
     return (Math.round(n * 100) / 100).toFixed(2).replace('-0.00', '0.00');
@@ -188,6 +189,36 @@ function initPayoutCalculator() {
     }
   }
 
+  function applyRowLock(tr, locked) {
+    tr.classList.toggle('row-locked', locked);
+    const inputs = tr.querySelectorAll('input');
+    inputs.forEach((input) => {
+      if (input.type === 'checkbox') return;
+      input.disabled = locked;
+    });
+    const buttons = tr.querySelectorAll('button');
+    buttons.forEach((button) => {
+      if (button.id === 'settleBtn') return;
+      button.disabled = locked;
+    });
+    const deleteButtons = tr.querySelectorAll('.delete-btn');
+    deleteButtons.forEach((button) => {
+      button.classList.toggle('locked', locked);
+    });
+  }
+
+  function setTableLocked(locked) {
+    tableLocked = locked;
+    if (addRowBtn) addRowBtn.disabled = locked || rowsTbody.children.length >= MAX_ROWS;
+    setDeleteRowBtnDisabled(locked || rowsTbody.children.length <= 0);
+    if (clearBtn) clearBtn.disabled = locked;
+    if (usualSuspectsBtn) usualSuspectsBtn.disabled = locked;
+    if (buyInInput) buyInInput.disabled = locked;
+    for (const tr of rowsTbody.children) {
+      applyRowLock(tr, locked);
+    }
+  }
+
   function createRow(values) {
     const tr = document.createElement('tr');
     const nameDef = values?.name ?? '';
@@ -294,6 +325,7 @@ function initPayoutCalculator() {
     plusBtn.addEventListener('click', () => adjustIn(1));
 
     tr._refs = { checkbox: checkbox, name: nameCell.inp, in: inCell.inp, out: outCell.inp, payout: payoutTd };
+    applyRowLock(tr, tableLocked);
     return tr;
   }
 
@@ -301,7 +333,13 @@ function initPayoutCalculator() {
     const count = rowsTbody.children.length;
     if (capNote) capNote.textContent = `${count} / ${MAX_ROWS} rows`;
     addRowBtn.disabled = count >= MAX_ROWS;
-    deleteRowBtn.disabled = count <= 0;
+    setDeleteRowBtnDisabled(count <= 0);
+  }
+
+  function setDeleteRowBtnDisabled(disabled) {
+    if (!deleteRowBtn) return;
+    deleteRowBtn.disabled = disabled;
+    deleteRowBtn.style.opacity = disabled ? '' : '1';
   }
 
   function addRow(values) {
@@ -596,18 +634,19 @@ function initPayoutCalculator() {
         }
         deleteRowBtn.style.opacity = '1';
       }
-      checkboxesVisible = !checkboxesVisible;
-      for (const tr of rowsTbody.children) {
-        const wrapper = tr.querySelector('.name-cell-wrapper');
-        if (wrapper) {
-          if (checkboxesVisible) {
-            wrapper.classList.remove('hidden-checkboxes');
-          } else {
-            wrapper.classList.add('hidden-checkboxes');
+        checkboxesVisible = !checkboxesVisible;
+        for (const tr of rowsTbody.children) {
+          const wrapper = tr.querySelector('.name-cell-wrapper');
+          if (wrapper) {
+            if (checkboxesVisible) {
+              wrapper.classList.remove('hidden-checkboxes');
+            } else {
+              wrapper.classList.add('hidden-checkboxes');
+            }
           }
         }
-      }
-      settleBtn.style.opacity = '1';
+        setTableLocked(checkboxesVisible);
+        settleBtn.style.opacity = '1';
     });
   }
 

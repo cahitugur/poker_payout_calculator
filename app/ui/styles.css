@@ -223,6 +223,10 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px
 .delete-btn:hover { opacity: 1; }
 .delete-btn:active { transform: scale(0.9); }
 .name-cell-wrapper.hidden-delete-btns .delete-btn { display: none; }
+.delete-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 .step-cell { vertical-align: middle; padding-left: 0 !important; padding-right: 0 !important; }
 .step-cell.minus-cell { text-align: right; }
@@ -246,6 +250,23 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px
 .step-btn.minus { background: var(--warn); border-color: rgba(0,0,0,0.2); }
 .step-btn.plus { background: var(--ok); border-color: rgba(0,0,0,0.2); }
 .step-btn:active { transform: translateY(1px); }
+
+.row-locked .num-input,
+.row-locked .step-btn,
+.row-locked .delete-btn {
+  opacity: 0.45 !important;
+  pointer-events: none;
+}
+
+.delete-btn.locked,
+.delete-btn.locked:hover,
+.delete-btn.locked:active {
+  opacity: 0.45 !important;
+}
+
+.row-locked .delete-btn:hover {
+  opacity: 0.45;
+}
 
 .menu-btn {
   background: none;
