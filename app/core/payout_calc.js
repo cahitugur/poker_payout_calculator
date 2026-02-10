@@ -5,6 +5,8 @@
 
 import { USUAL_SUSPECTS } from './shared-data.js';
 import { initFooter, initSharedIcons } from './shared-icons.js';
+import { initSettings } from './settings.js';
+import { loadSettingsData, normalizeSettingsData, saveSettingsData } from './settings-store.js';
 
 function initPayoutCalculator() {
   const root = document.querySelector('[data-app="payout"]');
@@ -15,6 +17,10 @@ function initPayoutCalculator() {
 
   const MAX_ROWS = 32;
   const STORAGE_KEY = 'poker-payout:v1';
+  const REVOLUT_BASE_URL = 'https://revolut.me';
+
+  let revolutCurrency = 'EUR';
+  let defaultBuyIn = '30';
 
   const rowsTbody = document.getElementById('rows');
   const addRowBtn = document.getElementById('addRowBtn');
@@ -31,6 +37,7 @@ function initPayoutCalculator() {
 
   let deleteButtonMode = false;
   let checkboxesVisible = false;
+  let tableLocked = false;
 
   function fmt(n) {
     return (Math.round(n * 100) / 100).toFixed(2).replace('-0.00', '0.00');
@@ -49,6 +56,44 @@ function initPayoutCalculator() {
     const num = parseFloat(str.replace(/[^0-9+\-\.]/g, ''));
     return Number.isFinite(num) ? num : 0;
   }
+
+  const defaultSuspectsForSettings = () => USUAL_SUSPECTS.map((name) => ({ name, revtag: '' }));
+
+  const normalizeRevtag = (value) => String(value || '').trim();
+
+  const revtagToSlug = (revtag) => normalizeRevtag(revtag).replace(/^@/, '');
+
+  const buildRevolutLink = (revtag, amount) => {
+    const slug = revtagToSlug(revtag);
+    if (!slug) return '';
+    const cents = Math.round(amount * 100);
+    return `${REVOLUT_BASE_URL}/${encodeURIComponent(slug)}?currency=${revolutCurrency}&amount=${cents}`;
+  };
+
+  const promptForRevtag = (label, fallback = '@') => {
+    const result = window.prompt(label, fallback);
+    if (result === null) return '';
+    const trimmed = normalizeRevtag(result);
+    return trimmed === '@' ? '' : trimmed;
+  };
+
+  const getSettingsSnapshot = async () => {
+    try {
+      return normalizeSettingsData(await loadSettingsData(), defaultSuspectsForSettings());
+    } catch (e) {
+      return normalizeSettingsData(null, defaultSuspectsForSettings());
+    }
+  };
+
+  const saveSettingsSnapshot = async (payload) => {
+    try {
+      await saveSettingsData({ profile: payload.profile, usualSuspects: payload.usualSuspects, gameSettings: payload.gameSettings });
+      return true;
+    } catch (e) {
+      showToastNotification('Unable to save revtag');
+      return false;
+    }
+  };
 
   function toBase64Url(bytes) {
     let binary = '';
@@ -186,10 +231,40 @@ function initPayoutCalculator() {
     }
   }
 
+  function applyRowLock(tr, locked) {
+    tr.classList.toggle('row-locked', locked);
+    const inputs = tr.querySelectorAll('input');
+    inputs.forEach((input) => {
+      if (input.type === 'checkbox') return;
+      input.disabled = locked;
+    });
+    const buttons = tr.querySelectorAll('button');
+    buttons.forEach((button) => {
+      if (button.id === 'settleBtn') return;
+      button.disabled = locked;
+    });
+    const deleteButtons = tr.querySelectorAll('.delete-btn');
+    deleteButtons.forEach((button) => {
+      button.classList.toggle('locked', locked);
+    });
+  }
+
+  function setTableLocked(locked) {
+    tableLocked = locked;
+    if (addRowBtn) addRowBtn.disabled = locked || rowsTbody.children.length >= MAX_ROWS;
+    setDeleteRowBtnDisabled(locked || rowsTbody.children.length <= 0);
+    if (clearBtn) clearBtn.disabled = locked;
+    if (usualSuspectsBtn) usualSuspectsBtn.disabled = locked;
+    if (buyInInput) buyInInput.disabled = locked;
+    for (const tr of rowsTbody.children) {
+      applyRowLock(tr, locked);
+    }
+  }
+
   function createRow(values) {
     const tr = document.createElement('tr');
     const nameDef = values?.name ?? '';
-    const inDef = values?.in ?? (getBuyInVal() ?? '30');
+    const inDef = values?.in ?? (getBuyInVal() ?? defaultBuyIn);
     const outDef = values?.out ?? '';
     const settledDef = values?.settled ?? false;
 
@@ -224,7 +299,7 @@ function initPayoutCalculator() {
       const index = Array.from(rowsTbody.children).indexOf(tr);
       if (index !== -1) {
         rowsTbody.removeChild(tr);
-        if (playerName && USUAL_SUSPECTS.includes(playerName) && !availableSuspects.includes(playerName)) {
+        if (playerName && usualSuspects.includes(playerName) && !availableSuspects.includes(playerName)) {
           availableSuspects.push(playerName);
           availableSuspects.sort();
           if (suspectsList && suspectsList.style.display === 'flex') {
@@ -292,6 +367,7 @@ function initPayoutCalculator() {
     plusBtn.addEventListener('click', () => adjustIn(1));
 
     tr._refs = { checkbox: checkbox, name: nameCell.inp, in: inCell.inp, out: outCell.inp, payout: payoutTd };
+    applyRowLock(tr, tableLocked);
     return tr;
   }
 
@@ -299,7 +375,13 @@ function initPayoutCalculator() {
     const count = rowsTbody.children.length;
     if (capNote) capNote.textContent = `${count} / ${MAX_ROWS} rows`;
     addRowBtn.disabled = count >= MAX_ROWS;
-    deleteRowBtn.disabled = count <= 0;
+    setDeleteRowBtnDisabled(count <= 0);
+  }
+
+  function setDeleteRowBtnDisabled(disabled) {
+    if (!deleteRowBtn) return;
+    deleteRowBtn.disabled = disabled;
+    deleteRowBtn.style.opacity = disabled ? '' : '1';
   }
 
   function addRow(values) {
@@ -324,7 +406,7 @@ function initPayoutCalculator() {
   function clearTable() {
     rowsTbody.innerHTML = '';
     for (let i = 0; i < 2; i++) addRow();
-    availableSuspects = [...USUAL_SUSPECTS];
+  availableSuspects = [...usualSuspects];
     deleteButtonMode = false;
     checkboxesVisible = false;
     for (const tr of rowsTbody.children) {
@@ -431,6 +513,31 @@ function initPayoutCalculator() {
     return false;
   }
 
+  function applyGameSettings(gs, { live = false } = {}) {
+    if (!gs) return;
+    if (gs.currency) revolutCurrency = gs.currency;
+    if (gs.defaultBuyIn) {
+      defaultBuyIn = gs.defaultBuyIn;
+      if (buyInInput && !tableLocked) {
+        if (live) {
+          buyInInput.value = defaultBuyIn;
+          recalc();
+          save();
+        } else {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const hasSavedBuyIn = raw && JSON.parse(raw)?.buyIn;
+          if (!hasSavedBuyIn) buyInInput.value = defaultBuyIn;
+        }
+      }
+    }
+  }
+
+  getSettingsSnapshot().then((snap) => applyGameSettings(snap.gameSettings));
+
+  window.addEventListener('game-settings-updated', (e) => {
+    applyGameSettings(e.detail?.gameSettings, { live: true });
+  });
+
   loadSharedDataFromUrl().then((dataLoaded) => {
     if (!dataLoaded && !restore()) {
       for (let i = 0; i < 2; i++) addRow();
@@ -469,8 +576,44 @@ function initPayoutCalculator() {
 
   clearBtn.addEventListener('click', clearTable);
 
-  let availableSuspects = [...USUAL_SUSPECTS];
+  let usualSuspects = [...USUAL_SUSPECTS];
+  let availableSuspects = [...usualSuspects];
   const suspectsList = document.getElementById('usualSuspectsList');
+  const actionRow = document.querySelector('.action-row');
+  const actionButtons = document.querySelector('.action-buttons');
+  document.querySelectorAll('.summary-actions').forEach((node) => node.remove());
+  document.querySelectorAll('#summaryBtn').forEach((node) => node.remove());
+
+  const summaryActions = document.createElement('div');
+  summaryActions.className = 'summary-actions is-hidden';
+  summaryActions.id = 'summaryActions';
+  const summaryBtn = document.createElement('button');
+  summaryBtn.id = 'summaryBtn';
+  summaryBtn.className = 'btn btn-secondary btn-wide';
+  summaryBtn.type = 'button';
+  summaryBtn.textContent = 'Copy Payment Links';
+  summaryActions.appendChild(summaryBtn);
+  const paymentSummary = document.createElement('div');
+  paymentSummary.className = 'payment-summary is-hidden';
+  paymentSummary.innerHTML = `
+    <div class="payment-col">
+      <h3>Players To Receive</h3>
+      <div class="payment-list" data-payment="receive"></div>
+    </div>
+    <div class="payment-col">
+      <h3>Players To Pay</h3>
+      <div class="payment-list" data-payment="pay"></div>
+    </div>
+  `;
+  if (actionRow && actionButtons) {
+    if (suspectsList) {
+      actionRow.insertBefore(summaryActions, suspectsList);
+      actionRow.insertBefore(paymentSummary, suspectsList);
+    } else {
+      actionButtons.after(summaryActions);
+      actionButtons.after(paymentSummary);
+    }
+  }
 
   if (usualSuspectsBtn) {
     function renderSuspectsList() {
@@ -521,6 +664,39 @@ function initPayoutCalculator() {
     });
   }
 
+  const refreshAvailableSuspects = () => {
+    const usedNames = new Set();
+    for (const tr of rowsTbody.children) {
+      const name = tr._refs?.name?.value?.trim();
+      if (name) usedNames.add(name);
+    }
+    availableSuspects = usualSuspects.filter((name) => !usedNames.has(name));
+    if (suspectsList && suspectsList.style.display === 'flex') {
+      const renderFn = window.renderSuspectsList;
+      if (renderFn) renderFn();
+    }
+  };
+
+  const loadUsualSuspects = async () => {
+    try {
+      const data = normalizeSettingsData(await loadSettingsData(), defaultSuspectsForSettings());
+      usualSuspects = data.usualSuspects.map((item) => item.name);
+    } catch (e) {
+      usualSuspects = [...USUAL_SUSPECTS];
+    }
+    refreshAvailableSuspects();
+  };
+
+  window.addEventListener('usual-suspects-updated', (event) => {
+    const detail = event.detail;
+    if (detail?.usualSuspects) {
+      usualSuspects = detail.usualSuspects.map((item) => item.name);
+      refreshAvailableSuspects();
+    }
+  });
+
+  loadUsualSuspects();
+
   if (buyInInput) {
     buyInInput.addEventListener('input', () => {
       validateInput(buyInInput);
@@ -550,6 +726,9 @@ function initPayoutCalculator() {
     settleBtn.style.opacity = '1';
 
     settleBtn.addEventListener('click', () => {
+      if (suspectsList) {
+        suspectsList.style.display = 'none';
+      }
       if (deleteButtonMode) {
         deleteButtonMode = false;
         for (const tr of rowsTbody.children) {
@@ -560,18 +739,191 @@ function initPayoutCalculator() {
         }
         deleteRowBtn.style.opacity = '1';
       }
-      checkboxesVisible = !checkboxesVisible;
-      for (const tr of rowsTbody.children) {
-        const wrapper = tr.querySelector('.name-cell-wrapper');
-        if (wrapper) {
-          if (checkboxesVisible) {
-            wrapper.classList.remove('hidden-checkboxes');
-          } else {
-            wrapper.classList.add('hidden-checkboxes');
+        checkboxesVisible = !checkboxesVisible;
+        for (const tr of rowsTbody.children) {
+          const wrapper = tr.querySelector('.name-cell-wrapper');
+          if (wrapper) {
+            if (checkboxesVisible) {
+              wrapper.classList.remove('hidden-checkboxes');
+            } else {
+              wrapper.classList.add('hidden-checkboxes');
+            }
           }
         }
+        setTableLocked(checkboxesVisible);
+        settleBtn.style.opacity = '1';
+        if (summaryActions) {
+          summaryActions.classList.toggle('is-hidden', !checkboxesVisible);
+        }
+        if (paymentSummary) {
+          paymentSummary.classList.toggle('is-hidden', !checkboxesVisible);
+          if (checkboxesVisible) {
+            renderPaymentSummary();
+          }
+        }
+    });
+  }
+
+  const copyTextToClipboard = async (text) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
       }
-      settleBtn.style.opacity = '1';
+    } catch (e) {
+      /* fallback below */
+    }
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return ok;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const renderPaymentSummary = async () => {
+    const receiveList = paymentSummary.querySelector('[data-payment="receive"]');
+    const payList = paymentSummary.querySelector('[data-payment="pay"]');
+    if (!receiveList || !payList) return;
+    receiveList.innerHTML = '';
+    payList.innerHTML = '';
+
+    const settingsData = await getSettingsSnapshot();
+    let settingsChanged = false;
+    let profileRevtag = normalizeRevtag(settingsData.profile?.revtag);
+
+    const ensureProfileRevtag = () => {
+      if (!profileRevtag) {
+        profileRevtag = promptForRevtag('Enter your profile revtag', '@');
+        if (profileRevtag) {
+          settingsData.profile.revtag = profileRevtag;
+          settingsChanged = true;
+        }
+      }
+      return profileRevtag;
+    };
+
+    const getSuspectRevtag = (name) => {
+      const entry = settingsData.usualSuspects.find((item) => (item.name || '').toLowerCase() === name.toLowerCase());
+      if (entry && normalizeRevtag(entry.revtag)) return entry.revtag;
+      const entered = promptForRevtag(`Enter revtag for ${name}`, '@');
+      if (entered) {
+        if (entry) {
+          entry.revtag = entered;
+        } else {
+          settingsData.usualSuspects.push({ name, revtag: entered });
+        }
+        settingsChanged = true;
+        return entered;
+      }
+      return '';
+    };
+
+    const addRow = (container, name, amount, link) => {
+      const row = document.createElement('div');
+      row.className = 'payment-row';
+      const nameEl = document.createElement('span');
+      nameEl.className = 'payment-name';
+      nameEl.textContent = name;
+      const amountEl = document.createElement('span');
+      amountEl.className = 'payment-amount';
+      amountEl.textContent = `${fmt(amount)} ${revolutCurrency}`;
+      row.appendChild(nameEl);
+      row.appendChild(amountEl);
+      if (link) {
+        const linkEl = document.createElement('a');
+        linkEl.className = 'payment-link';
+        linkEl.href = link;
+        linkEl.target = '_blank';
+        linkEl.rel = 'noopener noreferrer';
+        linkEl.textContent = 'Revolut';
+        row.appendChild(linkEl);
+      }
+      container.appendChild(row);
+    };
+
+    for (const tr of rowsTbody.children) {
+      const name = tr._refs?.name?.value?.trim();
+      if (!name) continue;
+      const payout = parseNum(tr._refs?.out?.value) - parseNum(tr._refs?.in?.value);
+      if (Math.abs(payout) < 0.005) continue;
+
+      if (payout > 0) {
+        const revtag = getSuspectRevtag(name);
+        const link = buildRevolutLink(revtag, payout);
+        addRow(receiveList, name, payout, link);
+      } else {
+        const revtag = ensureProfileRevtag();
+        const link = buildRevolutLink(revtag, Math.abs(payout));
+        addRow(payList, name, Math.abs(payout), link);
+      }
+    }
+
+    if (!receiveList.children.length) {
+      receiveList.innerHTML = '<span class="muted-text">No players</span>';
+    }
+    if (!payList.children.length) {
+      payList.innerHTML = '<span class="muted-text">No players</span>';
+    }
+
+    if (settingsChanged) {
+      await saveSettingsSnapshot(settingsData);
+    }
+  };
+
+  const buildSummaryText = async () => {
+    const settingsData = await getSettingsSnapshot();
+    let settingsChanged = false;
+    let profileRevtag = normalizeRevtag(settingsData.profile?.revtag);
+
+    if (!profileRevtag) {
+      profileRevtag = promptForRevtag('Enter your profile revtag', '@');
+      if (profileRevtag) {
+        settingsData.profile.revtag = profileRevtag;
+        settingsChanged = true;
+      }
+    }
+
+    const lines = [];
+    for (const tr of rowsTbody.children) {
+      const name = tr._refs?.name?.value?.trim();
+      if (!name) continue;
+      const inVal = parseNum(tr._refs?.in?.value);
+      const outVal = parseNum(tr._refs?.out?.value);
+      const payout = outVal - inVal;
+      if (payout >= -0.005) continue;
+
+      const absAmount = Math.abs(payout);
+      const payoutLabel = fmt(payout);
+      const link = buildRevolutLink(profileRevtag, absAmount);
+      const suffix = link ? ` - ${link}` : '';
+      lines.push(`${name}: ${payoutLabel} ${revolutCurrency}${suffix}`);
+    }
+
+    if (settingsChanged) {
+      await saveSettingsSnapshot(settingsData);
+    }
+
+    return lines.join('\n');
+  };
+
+  if (summaryBtn) {
+    summaryBtn.addEventListener('click', async () => {
+      const summary = await buildSummaryText();
+      if (!summary) {
+        showToastNotification('No payouts to summarize');
+        return;
+      }
+      const copied = await copyTextToClipboard(summary);
+      showToastNotification(copied ? 'Summary copied to clipboard!' : 'Failed to copy summary');
     });
   }
 
@@ -627,6 +979,8 @@ function initPayoutCalculator() {
       }
     }, 2300);
   }
+
+  initSettings({ showToast: showToastNotification });
 
   if (optionsBtn && optionsDropdown) {
     optionsBtn.addEventListener('click', (e) => {

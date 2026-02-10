@@ -28,3 +28,5 @@ export const USUAL_SUSPECTS = [
   'Scott',
   'Tuhin'
 ];
+
+export const DEFAULT_USUAL_SUSPECTS = USUAL_SUSPECTS.map((name) => ({ name, revtag: '' }));

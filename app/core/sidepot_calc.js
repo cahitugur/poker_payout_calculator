@@ -5,6 +5,8 @@
 
 import { USUAL_SUSPECTS } from './shared-data.js';
 import { initFooter, initSharedIcons } from './shared-icons.js';
+import { initSettings } from './settings.js';
+import { loadSettingsData, normalizeSettingsData } from './settings-store.js';
 
 function initSidePotCalculator() {
   const root = document.querySelector('[data-app="sidepot"]');
@@ -29,7 +31,8 @@ function initSidePotCalculator() {
   const statusText = statusEl ? statusEl.querySelector('.status-text') : null;
 
   let deleteButtonMode = false;
-  let availableSuspects = [...USUAL_SUSPECTS];
+  let usualSuspects = [...USUAL_SUSPECTS];
+  let availableSuspects = [...usualSuspects];
 
   function fmt(n) {
     return (Math.round(n * 100) / 100).toFixed(2).replace('-0.00', '0.00');
@@ -248,7 +251,7 @@ function initSidePotCalculator() {
       e.preventDefault();
       const playerName = tr._refs.name.value.trim();
       rowsTbody.removeChild(tr);
-      if (playerName && USUAL_SUSPECTS.includes(playerName) && !availableSuspects.includes(playerName)) {
+      if (playerName && usualSuspects.includes(playerName) && !availableSuspects.includes(playerName)) {
         availableSuspects.push(playerName);
         availableSuspects.sort();
         const suspectsList = document.getElementById('usualSuspectsList');
@@ -487,7 +490,7 @@ function initSidePotCalculator() {
     rowsTbody.innerHTML = '';
     rowsTbody.appendChild(createInitialPotRow(''));
     for (let i = 0; i < 2; i++) addRow();
-    availableSuspects = [...USUAL_SUSPECTS];
+  availableSuspects = [...usualSuspects];
     deleteButtonMode = false;
     for (const tr of rowsTbody.children) {
       const wrapper = tr.querySelector('.name-cell-wrapper');
@@ -750,6 +753,39 @@ function initSidePotCalculator() {
     });
   }
 
+  const refreshAvailableSuspects = () => {
+    const usedNames = new Set();
+    for (const tr of rowsTbody.children) {
+      if (tr._refs?.isInitialPot) continue;
+      const name = tr._refs?.name?.value?.trim();
+      if (name) usedNames.add(name);
+    }
+    availableSuspects = usualSuspects.filter((name) => !usedNames.has(name));
+    if (suspectsList && suspectsList.style.display === 'flex') {
+      renderSuspectsList();
+    }
+  };
+
+  const loadUsualSuspects = async () => {
+    try {
+      const data = normalizeSettingsData(await loadSettingsData(), USUAL_SUSPECTS.map((name) => ({ name, revtag: '' })));
+      usualSuspects = data.usualSuspects.map((item) => item.name);
+    } catch (e) {
+      usualSuspects = [...USUAL_SUSPECTS];
+    }
+    refreshAvailableSuspects();
+  };
+
+  window.addEventListener('usual-suspects-updated', (event) => {
+    const detail = event.detail;
+    if (detail?.usualSuspects) {
+      usualSuspects = detail.usualSuspects.map((item) => item.name);
+      refreshAvailableSuspects();
+    }
+  });
+
+  loadUsualSuspects();
+
   function showToastNotification(message) {
     const toast = document.createElement('div');
     toast.className = 'toast-notification';
@@ -766,6 +802,8 @@ function initSidePotCalculator() {
       }
     }, 2300);
   }
+
+  initSettings({ showToast: showToastNotification });
 
   const menuBtn = document.getElementById('menuBtn');
   const menuDropdown = document.getElementById('menuDropdown');
@@ -874,8 +912,8 @@ function initSidePotCalculator() {
           for (const r of sharedData.rows) {
             addRow({ name: r.name ?? '', bet: r.bet ?? '' });
           }
-          const usedNames = sharedData.rows.map((r) => r.name).filter((n) => n && USUAL_SUSPECTS.includes(n));
-          availableSuspects = USUAL_SUSPECTS.filter((n) => !usedNames.includes(n));
+          const usedNames = sharedData.rows.map((r) => r.name).filter((n) => n && usualSuspects.includes(n));
+          availableSuspects = usualSuspects.filter((n) => !usedNames.includes(n));
           recalc();
         }
       } catch (e) {
@@ -894,8 +932,8 @@ function initSidePotCalculator() {
           for (const r of sharedData.rows) {
             addRow({ name: r.name ?? '', bet: r.bet ?? '' });
           }
-          const usedNames = sharedData.rows.map((r) => r.name).filter((n) => n && USUAL_SUSPECTS.includes(n));
-          availableSuspects = USUAL_SUSPECTS.filter((n) => !usedNames.includes(n));
+          const usedNames = sharedData.rows.map((r) => r.name).filter((n) => n && usualSuspects.includes(n));
+          availableSuspects = usualSuspects.filter((n) => !usedNames.includes(n));
           recalc();
         }
       } catch (e) {
