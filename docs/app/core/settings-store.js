@@ -8,6 +8,10 @@ const SETTINGS_FILENAME = 'poker-calc-settings.json';
 const DB_NAME = 'poker-calc-settings-db';
 const STORE_NAME = 'file-handles';
 const HANDLE_KEY = 'profile-file';
+const LS_SETTINGS_KEY = 'poker-calc-settings';
+
+const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const useLocalStorage = () => isMobile() || !window.showSaveFilePicker;
 
 const openProfileDb = () => new Promise((resolve, reject) => {
   const request = indexedDB.open(DB_NAME, 1);
@@ -82,7 +86,51 @@ const getOrRequestHandle = async (mode = 'readwrite') => {
   return handle;
 };
 
+/* ── LocalStorage backend (mobile) ── */
+
+const loadSettingsLS = () => {
+  try {
+    const raw = localStorage.getItem(LS_SETTINGS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const saveSettingsLS = (payload) => {
+  localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(payload, null, 2));
+};
+
+/* ── File System Access API backend (desktop) ── */
+
 export const openSettingsFileForImport = async () => {
+  if (useLocalStorage()) {
+    return new Promise((resolve, reject) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json,application/json';
+      input.style.display = 'none';
+      input.addEventListener('change', async () => {
+        try {
+          const file = input.files?.[0];
+          if (!file) { resolve(null); return; }
+          const text = await file.text();
+          const data = JSON.parse(text);
+          resolve({ _lsImport: true, data });
+        } catch (e) {
+          reject(new Error('InvalidJSON'));
+        } finally {
+          document.body.removeChild(input);
+        }
+      });
+      input.addEventListener('cancel', () => {
+        document.body.removeChild(input);
+        resolve(null);
+      });
+      document.body.appendChild(input);
+      input.click();
+    });
+  }
   if (!window.showOpenFilePicker) return null;
   const [handle] = await window.showOpenFilePicker({
     types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
@@ -96,6 +144,7 @@ export const openSettingsFileForImport = async () => {
 
 export const readSettingsFromHandle = async (handle) => {
   if (!handle) return null;
+  if (handle._lsImport) return handle.data;
   const file = await handle.getFile();
   const text = await file.text();
   if (!text) return null;
@@ -103,6 +152,19 @@ export const readSettingsFromHandle = async (handle) => {
 };
 
 export const saveSettingsDataAs = async (payload) => {
+  if (useLocalStorage()) {
+    saveSettingsLS(payload);
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = SETTINGS_FILENAME;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return;
+  }
   if (!window.showSaveFilePicker) {
     throw new Error('FilePickerUnavailable');
   }
@@ -157,6 +219,7 @@ export const normalizeSettingsData = (data, defaultSuspects = []) => {
 };
 
 export const loadSettingsData = async () => {
+  if (useLocalStorage()) return loadSettingsLS();
   const handle = await getStoredHandle();
   if (!handle) return null;
   const ok = await ensureHandlePermission(handle, 'read');
@@ -168,6 +231,10 @@ export const loadSettingsData = async () => {
 };
 
 export const saveSettingsData = async (payload) => {
+  if (useLocalStorage()) {
+    saveSettingsLS(payload);
+    return;
+  }
   const handle = await getOrRequestHandle('readwrite');
   if (!handle) {
     throw new Error('FilePickerUnavailable');
