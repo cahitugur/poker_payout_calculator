@@ -35,6 +35,15 @@ export function initSettings({ showToast } = {}) {
   const importSettingsBtn = document.getElementById('importSettingsBtn');
   const exportSettingsBtn = document.getElementById('exportSettingsBtn');
   const menuDropdown = document.getElementById('menuDropdown');
+  const gameSettingsBtn = document.getElementById('gameSettingsBtn');
+  const gameSettingsModal = document.getElementById('gameSettingsModal');
+  const gameSettingsCloseBtn = document.getElementById('gameSettingsCloseBtn');
+  const gameSettingsBackBtn = document.getElementById('gameSettingsBackBtn');
+  const gameSettingsSaveBtn = document.getElementById('gameSettingsSaveBtn');
+  const currencySelect = document.getElementById('currencySelect');
+  const customCurrencyField = document.getElementById('customCurrencyField');
+  const customCurrencyInput = document.getElementById('customCurrencyInput');
+  const defaultBuyInInput = document.getElementById('defaultBuyInInput');
 
   if (!settingsBtn && !settingsModal && !profileModal) return;
 
@@ -45,13 +54,24 @@ export function initSettings({ showToast } = {}) {
     }
   };
 
+  const formatRevtagDisplay = (value) => {
+    const trimmed = (value ?? '').trim();
+    return trimmed ? trimmed : '@';
+  };
+
+  const normalizeRevtagValue = (value) => {
+    const trimmed = (value ?? '').trim();
+    return trimmed === '@' ? '' : trimmed;
+  };
+
   const loadSettings = async () => normalizeSettingsData(await loadSettingsData(), defaultSuspects);
 
   const buildSettingsPayload = async () => {
     const existing = await loadSettings();
     return {
       profile: existing.profile,
-      usualSuspects: existing.usualSuspects
+      usualSuspects: existing.usualSuspects,
+      gameSettings: existing.gameSettings
     };
   };
 
@@ -60,10 +80,10 @@ export function initSettings({ showToast } = {}) {
     try {
       const parsed = await loadSettings();
       profileNameInput.value = parsed.profile?.name ?? '';
-      profileRevtagInput.value = parsed.profile?.revtag ?? '';
+      profileRevtagInput.value = formatRevtagDisplay(parsed.profile?.revtag ?? '');
     } catch (e) {
       profileNameInput.value = '';
-      profileRevtagInput.value = '';
+      profileRevtagInput.value = '@';
     }
   };
 
@@ -72,14 +92,15 @@ export function initSettings({ showToast } = {}) {
     const payload = {
       profile: {
         name: profileNameInput.value.trim(),
-        revtag: profileRevtagInput.value.trim()
+        revtag: normalizeRevtagValue(profileRevtagInput.value)
       }
     };
     try {
       const existing = await loadSettings();
       await saveSettingsData({
         profile: payload.profile,
-        usualSuspects: existing.usualSuspects
+        usualSuspects: existing.usualSuspects,
+        gameSettings: existing.gameSettings
       });
       notify('Profile saved');
       return true;
@@ -159,7 +180,7 @@ export function initSettings({ showToast } = {}) {
     revInput.className = 'input-field';
     revInput.type = 'text';
     revInput.placeholder = 'Revtag';
-    revInput.value = suspect?.revtag ?? '';
+  revInput.value = formatRevtagDisplay(suspect?.revtag ?? '');
     revTd.appendChild(revInput);
 
     const deleteTd = document.createElement('td');
@@ -191,7 +212,7 @@ export function initSettings({ showToast } = {}) {
       .map((row) => {
         const inputs = row.querySelectorAll('input');
         const name = inputs[0]?.value?.trim() ?? '';
-        const revtag = inputs[1]?.value?.trim() ?? '';
+        const revtag = normalizeRevtagValue(inputs[1]?.value ?? '');
         if (!name) return null;
         return { name, revtag };
       })
@@ -214,7 +235,8 @@ export function initSettings({ showToast } = {}) {
       const usualSuspects = readSuspectsFromTable();
       await saveSettingsData({
         profile: existing.profile,
-        usualSuspects
+        usualSuspects,
+        gameSettings: existing.gameSettings
       });
       notify('Usual suspects saved');
       window.dispatchEvent(new CustomEvent('usual-suspects-updated', { detail: { usualSuspects } }));
@@ -240,16 +262,21 @@ export function initSettings({ showToast } = {}) {
       const normalized = normalizeSettingsData(raw, defaultSuspects);
       await saveSettingsData({
         profile: normalized.profile,
-        usualSuspects: normalized.usualSuspects
+        usualSuspects: normalized.usualSuspects,
+        gameSettings: normalized.gameSettings
       });
       if (profileModal?.classList.contains('active')) {
         profileNameInput.value = normalized.profile.name;
-        profileRevtagInput.value = normalized.profile.revtag;
+        profileRevtagInput.value = formatRevtagDisplay(normalized.profile.revtag);
       }
       if (usualSuspectsModal?.classList.contains('active')) {
         renderUsualSuspects(normalized.usualSuspects);
       }
+      if (gameSettingsModal?.classList.contains('active')) {
+        loadGameSettingsUI(normalized.gameSettings);
+      }
       window.dispatchEvent(new CustomEvent('usual-suspects-updated', { detail: { usualSuspects: normalized.usualSuspects } }));
+      window.dispatchEvent(new CustomEvent('game-settings-updated', { detail: { gameSettings: normalized.gameSettings } }));
       notify('Settings imported');
     } catch (e) {
       notify('Unable to import settings');
@@ -380,11 +407,127 @@ export function initSettings({ showToast } = {}) {
     });
   }
 
+  /* ── Game Settings modal ── */
+
+  const KNOWN_CURRENCIES = ['EUR', 'USD', 'BTC'];
+
+  const closeGameSettingsModal = () => {
+    if (!gameSettingsModal) return;
+    gameSettingsModal.classList.remove('active');
+    gameSettingsModal.setAttribute('aria-hidden', 'true');
+  };
+
+  const openGameSettingsModal = async () => {
+    if (!gameSettingsModal) return;
+    gameSettingsModal.classList.add('active');
+    gameSettingsModal.setAttribute('aria-hidden', 'false');
+    await loadGameSettings();
+  };
+
+  const loadGameSettingsUI = (gs) => {
+    if (!currencySelect) return;
+    const cur = gs?.currency ?? 'EUR';
+    if (KNOWN_CURRENCIES.includes(cur)) {
+      currencySelect.value = cur;
+      if (customCurrencyField) customCurrencyField.classList.add('is-hidden');
+      if (customCurrencyInput) customCurrencyInput.value = '';
+    } else {
+      currencySelect.value = 'Other';
+      if (customCurrencyField) customCurrencyField.classList.remove('is-hidden');
+      if (customCurrencyInput) customCurrencyInput.value = cur;
+    }
+    if (defaultBuyInInput) defaultBuyInInput.value = gs?.defaultBuyIn ?? '30';
+  };
+
+  const loadGameSettings = async () => {
+    try {
+      const parsed = await loadSettings();
+      loadGameSettingsUI(parsed.gameSettings);
+    } catch (e) {
+      loadGameSettingsUI({ currency: 'EUR', defaultBuyIn: '30' });
+    }
+  };
+
+  const readGameSettingsFromUI = () => {
+    let currency = currencySelect?.value ?? 'EUR';
+    if (currency === 'Other') {
+      currency = (customCurrencyInput?.value ?? '').trim() || 'EUR';
+    }
+    const defaultBuyIn = (defaultBuyInInput?.value ?? '30').trim() || '30';
+    return { currency, defaultBuyIn };
+  };
+
+  const saveGameSettings = async () => {
+    try {
+      const existing = await loadSettings();
+      const gameSettings = readGameSettingsFromUI();
+      await saveSettingsData({
+        profile: existing.profile,
+        usualSuspects: existing.usualSuspects,
+        gameSettings
+      });
+      notify('Game settings saved');
+      window.dispatchEvent(new CustomEvent('game-settings-updated', { detail: { gameSettings } }));
+      return true;
+    } catch (e) {
+      if (e && e.message === 'FilePickerUnavailable') {
+        notify('File picker not supported in this browser');
+      } else {
+        notify('Unable to save game settings');
+      }
+      return false;
+    }
+  };
+
+  if (currencySelect) {
+    currencySelect.addEventListener('change', () => {
+      if (customCurrencyField) {
+        customCurrencyField.classList.toggle('is-hidden', currencySelect.value !== 'Other');
+      }
+    });
+  }
+
+  if (gameSettingsBtn) {
+    gameSettingsBtn.addEventListener('click', () => {
+      closeSettingsModal();
+      openGameSettingsModal();
+    });
+  }
+
+  if (gameSettingsCloseBtn) {
+    gameSettingsCloseBtn.addEventListener('click', closeGameSettingsModal);
+  }
+
+  if (gameSettingsBackBtn) {
+    gameSettingsBackBtn.addEventListener('click', () => {
+      closeGameSettingsModal();
+      openSettingsModal();
+    });
+  }
+
+  if (gameSettingsSaveBtn) {
+    gameSettingsSaveBtn.addEventListener('click', () => {
+      saveGameSettings().then((didSave) => {
+        if (didSave) closeGameSettingsModal();
+      });
+    });
+  }
+
+  if (gameSettingsModal) {
+    gameSettingsModal.addEventListener('click', (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && target.dataset.close === 'true') {
+        closeGameSettingsModal();
+      }
+    });
+  }
+
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       closeSettingsModal();
       closeProfileModal();
       closeUsualSuspectsModal();
+      closeGameSettingsModal();
     }
   });
 }

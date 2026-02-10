@@ -134,6 +134,10 @@
             <span>Usual Suspects</span>
             <span class="settings-item-meta">Manage quick-add players</span>
           </button>
+          <button id="gameSettingsBtn" class="settings-item-btn" type="button">
+            <span>Game Defaults</span>
+            <span class="settings-item-meta">Currency and Buy-in</span>
+          </button>
         </div>
         <div class="settings-actions settings-actions-split">
           <button id="importSettingsBtn" class="btn btn-secondary settings-action-btn" type="button">
@@ -217,6 +221,46 @@
         <div class="settings-actions settings-actions-split">
           <button id="addSuspectBtn" class="btn btn-secondary" type="button">➕ Add</button>
           <button id="suspectsSaveBtn" class="btn btn-primary" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameSettingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="gameSettingsTitle" aria-hidden="true">
+    <div class="modal-overlay" data-close="true"></div>
+    <div class="modal-content" role="document">
+      <div class="modal-header">
+        <button id="gameSettingsBackBtn" class="modal-back" type="button" aria-label="Back to settings">
+          <svg class="modal-back-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <h2 id="gameSettingsTitle">Game Defaults</h2>
+        <button id="gameSettingsCloseBtn" class="modal-close" type="button" aria-label="Close game settings">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted-text">Default values for new games.</p>
+        <div class="settings-section">
+          <label class="settings-field">
+            <span class="settings-label">Currency</span>
+            <select id="currencySelect" class="select-field">
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="BTC">BTC</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label id="customCurrencyField" class="settings-field is-hidden">
+            <span class="settings-label">Custom Currency</span>
+            <input id="customCurrencyInput" class="input-field" type="text" placeholder="e.g. GBP" maxlength="10" />
+          </label>
+          <label class="settings-field">
+            <span class="settings-label">Buy-In</span>
+            <input id="defaultBuyInInput" class="input-field" type="text" inputmode="numeric" placeholder="e.g. 30" />
+          </label>
+        </div>
+        <div class="settings-actions">
+          <button id="gameSettingsSaveBtn" class="btn btn-primary" type="button">Save</button>
         </div>
       </div>
     </div>

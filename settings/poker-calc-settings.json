@@ -1,7 +1,7 @@
 {
   "profile": {
     "name": "Cahit",
-    "revtag": "Ugur"
+    "revtag": "@cahitugur"
   },
   "usualSuspects": [
     {
@@ -10,7 +10,7 @@
     },
     {
       "name": "Cahit",
-      "revtag": ""
+      "revtag": "@cahitugur"
     },
     {
       "name": "Colm",
@@ -26,11 +26,11 @@
     },
     {
       "name": "Euan",
-      "revtag": ""
+      "revtag": "@euan"
     },
     {
       "name": "Evangelia",
-      "revtag": ""
+      "revtag": "@eva"
     },
     {
       "name": "Ferhat",
@@ -38,7 +38,7 @@
     },
     {
       "name": "Hannan",
-      "revtag": ""
+      "revtag": "@hannan"
     },
     {
       "name": "James",
@@ -51,6 +51,10 @@
     {
       "name": "Kunal",
       "revtag": ""
+    },
+    {
+      "name": "Lauren",
+      "revtag": "@lalaugur"
     },
     {
       "name": "Liam",
@@ -92,5 +96,9 @@
       "name": "Tuhin",
       "revtag": ""
     }
-  ]
+  ],
+  "gameSettings": {
+    "currency": "EUR",
+    "defaultBuyIn": "30"
+  }
 }

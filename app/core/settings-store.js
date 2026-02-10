@@ -147,7 +147,13 @@ export const normalizeSettingsData = (data, defaultSuspects = []) => {
     .map(normalizeSuspect)
     .filter((item) => item !== null);
 
-  return { profile, usualSuspects };
+  const KNOWN_CURRENCIES = ['EUR', 'USD', 'BTC'];
+  const rawCurrency = (data?.gameSettings?.currency ?? 'EUR').trim();
+  const currency = KNOWN_CURRENCIES.includes(rawCurrency) ? rawCurrency : rawCurrency || 'EUR';
+  const defaultBuyIn = data?.gameSettings?.defaultBuyIn ?? '30';
+  const gameSettings = { currency, defaultBuyIn: String(defaultBuyIn) };
+
+  return { profile, usualSuspects, gameSettings };
 };
 
 export const loadSettingsData = async () => {
