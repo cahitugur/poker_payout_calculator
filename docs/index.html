@@ -1,0 +1,264 @@
+<!--
+  Copyright (c) 2025 Cahit Ugur
+  SPDX-License-Identifier: MIT
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Poker Payout Calculator</title>
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" ry="12" fill="%230b1020"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="44" font-family="system-ui,Segoe UI,Roboto,Helvetica,Arial" fill="%2310b981">♠</text></svg>'/>
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="page page-payout" data-app="payout">
+  <div class="wrap">
+    <h1 class="page-title">Poker Payout Calculator</h1>
+    <div class="card">
+      <div class="toolbar">
+        <button id="menuBtn" class="menu-btn" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div id="menuDropdown" class="menu-dropdown">
+          <a href="index.html">Poker Payout Calculator</a>
+          <a href="side-pot.html">Side Pot Calculator</a>
+          <a id="settingsBtn" href="#">Settings</a>
+        </div>
+        <span class="toolbar-icon" aria-hidden="true" title="Poker">
+          <svg width="22" height="22" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
+            <title>Spade</title>
+            <path fill="#10b981" d="M32 6C20 18 8 26 8 36c0 6 5 11 11 11 4 0 8-2 10-5-1 5-3 9-8 12h22c-5-3-7-7-8-12 2 3 6 5 10 5 6 0 11-5 11-11 0-10-12-18-24-30z"/>
+          </svg>
+        </span>
+        <div id="balanceStatus" class="status warn" aria-live="polite">
+          <span class="dot"></span>
+          <span class="status-text">Unbalanced</span>
+        </div>
+        <span class="spacer"></span>
+        <button id="optionsBtn" class="options-btn" aria-label="Options">⋮</button>
+        <div id="optionsDropdown" class="options-dropdown">
+          <button id="shareBtn" class="options-item" type="button">↗️ Share</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <form id="calcForm">
+          <table>
+            <colgroup>
+              <col class="col-name">
+              <col class="col-step">
+              <col class="col-in">
+              <col class="col-step">
+              <col class="col-out">
+              <col class="col-payout">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="controls-cell" colspan="6">
+                  <div class="controls">
+                    <button id="addRowBtn" class="btn btn-secondary" type="button">➕ Add</button>
+                    <button id="deleteRowBtn" class="btn btn-secondary" type="button">➖ Delete</button>
+                    <button id="clearBtn" class="btn btn-secondary" type="button">🧹 Clear</button>
+                    <div class="spacer"></div>
+                    <div class="buyin-container">
+                      <label class="buyin-label" for="buyInInput">Buy-In</label>
+                      <input id="buyInInput" class="input-field buyin-input" type="text" inputmode="numeric" value="30" />
+                    </div>
+                  </div>
+                </th>
+              </tr>
+              <tr>
+                <th>Name</th>
+                <th aria-label="decrement"></th>
+                <th>In</th>
+                <th aria-label="increment"></th>
+                <th>Out</th>
+                <th>Payout</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+
+            <tfoot>
+              <tr>
+                <th>Total</th>
+                <th></th>
+                <th id="totalIn" class="payout">0.00</th>
+                <th></th>
+                <th id="totalOut" class="payout">0.00</th>
+                <th id="totalPayout" class="payout">0.00</th>
+              </tr>
+            </tfoot>
+          </table>
+        </form>
+      </div>
+
+      <div class="action-row">
+        <div class="action-buttons">
+          <button id="usualSuspectsBtn" class="btn btn-secondary btn-wide" type="button">👥 Usual Suspects</button>
+          <button id="settleBtn" class="btn btn-secondary btn-wide" type="button">✔ Settle</button>
+        </div>
+        <div id="usualSuspectsList" class="suspects-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer></footer>
+
+  <div id="settingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true">
+    <div class="modal-overlay" data-close="true"></div>
+    <div class="modal-content" role="document">
+      <div class="modal-header">
+        <h2 id="settingsTitle">Settings</h2>
+        <button id="settingsCloseBtn" class="modal-close" type="button" aria-label="Close settings">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted-text">Choose a settings category.</p>
+        <div class="settings-list">
+          <button id="profileSettingsBtn" class="settings-item-btn" type="button">
+            <span>Profile</span>
+            <span class="settings-item-meta">Edit name and revtag</span>
+          </button>
+          <button id="usualSuspectsSettingsBtn" class="settings-item-btn" type="button">
+            <span>Usual Suspects</span>
+            <span class="settings-item-meta">Manage quick-add players</span>
+          </button>
+          <button id="gameSettingsBtn" class="settings-item-btn" type="button">
+            <span>Game Defaults</span>
+            <span class="settings-item-meta">Currency and Buy-in</span>
+          </button>
+        </div>
+        <div class="settings-actions settings-actions-split">
+          <button id="importSettingsBtn" class="btn btn-secondary settings-action-btn" type="button">
+            <svg class="settings-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v10" />
+              <path d="M7 9l5 5 5-5" />
+              <path d="M5 20h14" />
+            </svg>
+            <span>Import</span>
+          </button>
+          <button id="exportSettingsBtn" class="btn btn-secondary settings-action-btn" type="button">
+            <svg class="settings-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 21V11" />
+              <path d="M7 15l5-5 5 5" />
+              <path d="M5 4h14" />
+            </svg>
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="profileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="profileTitle" aria-hidden="true">
+    <div class="modal-overlay" data-close="true"></div>
+    <div class="modal-content" role="document">
+      <div class="modal-header">
+        <button id="profileBackBtn" class="modal-back" type="button" aria-label="Back to settings">
+          <svg class="modal-back-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <h2 id="profileTitle">Profile</h2>
+        <button id="profileCloseBtn" class="modal-close" type="button" aria-label="Close profile">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted-text">Profile settings are stored on this device.</p>
+        <div class="settings-section">
+          <label class="settings-field">
+            <span class="settings-label">Name</span>
+            <input id="profileNameInput" class="input-field" type="text" placeholder="Your name" autocomplete="name" />
+          </label>
+          <label class="settings-field">
+            <span class="settings-label">Revtag</span>
+            <input id="profileRevtagInput" class="input-field" type="text" placeholder="e.g. @yourtag" />
+          </label>
+        </div>
+        <div class="settings-actions">
+          <button id="profileSaveBtn" class="btn btn-primary" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="usualSuspectsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="usualSuspectsTitle" aria-hidden="true">
+    <div class="modal-overlay" data-close="true"></div>
+    <div class="modal-content" role="document">
+      <div class="modal-header">
+        <button id="usualSuspectsBackBtn" class="modal-back" type="button" aria-label="Back to settings">
+          <svg class="modal-back-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <h2 id="usualSuspectsTitle">Usual Suspects</h2>
+        <button id="usualSuspectsCloseBtn" class="modal-close" type="button" aria-label="Close usual suspects">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted-text">Add players for quick access in the calculator.</p>
+        <div class="settings-table-wrapper">
+          <table class="settings-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Revtag</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="usualSuspectsTableBody"></tbody>
+          </table>
+        </div>
+        <div class="settings-actions settings-actions-split">
+          <button id="addSuspectBtn" class="btn btn-secondary" type="button">➕ Add</button>
+          <button id="suspectsSaveBtn" class="btn btn-primary" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameSettingsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="gameSettingsTitle" aria-hidden="true">
+    <div class="modal-overlay" data-close="true"></div>
+    <div class="modal-content" role="document">
+      <div class="modal-header">
+        <button id="gameSettingsBackBtn" class="modal-back" type="button" aria-label="Back to settings">
+          <svg class="modal-back-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <h2 id="gameSettingsTitle">Game Defaults</h2>
+        <button id="gameSettingsCloseBtn" class="modal-close" type="button" aria-label="Close game settings">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="muted-text">Default values for new games.</p>
+        <div class="settings-section">
+          <label class="settings-field">
+            <span class="settings-label">Currency</span>
+            <select id="currencySelect" class="select-field">
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="BTC">BTC</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label id="customCurrencyField" class="settings-field is-hidden">
+            <span class="settings-label">Custom Currency</span>
+            <input id="customCurrencyInput" class="input-field" type="text" placeholder="e.g. GBP" maxlength="10" />
+          </label>
+          <label class="settings-field">
+            <span class="settings-label">Buy-In</span>
+            <input id="defaultBuyInInput" class="input-field" type="text" inputmode="numeric" placeholder="e.g. 30" />
+          </label>
+        </div>
+        <div class="settings-actions">
+          <button id="gameSettingsSaveBtn" class="btn btn-primary" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="../core/payout_calc.js"></script>
+</body>
+</html>
