@@ -67,7 +67,7 @@ export function initSharedIcons() {
   }
 }
 
-export function initFooter(versionText = 'Version 1.5') {
+export function initFooter(versionText = 'Version 1.6') {
   if (footerInitialized) return;
   footerInitialized = true;
   const footer = document.querySelector('footer');
