@@ -44,6 +44,7 @@ export function initSettings({ showToast } = {}) {
   const customCurrencyField = document.getElementById('customCurrencyField');
   const customCurrencyInput = document.getElementById('customCurrencyInput');
   const defaultBuyInInput = document.getElementById('defaultBuyInInput');
+  const settlementModeSelect = document.getElementById('settlementModeSelect');
 
   if (!settingsBtn && !settingsModal && !profileModal) return;
 
@@ -437,6 +438,7 @@ export function initSettings({ showToast } = {}) {
       if (customCurrencyInput) customCurrencyInput.value = cur;
     }
     if (defaultBuyInInput) defaultBuyInInput.value = gs?.defaultBuyIn ?? '30';
+    if (settlementModeSelect) settlementModeSelect.value = gs?.settlementMode ?? 'banker';
   };
 
   const loadGameSettings = async () => {
@@ -454,7 +456,8 @@ export function initSettings({ showToast } = {}) {
       currency = (customCurrencyInput?.value ?? '').trim() || 'EUR';
     }
     const defaultBuyIn = (defaultBuyInInput?.value ?? '30').trim() || '30';
-    return { currency, defaultBuyIn };
+    const settlementMode = settlementModeSelect?.value ?? 'banker';
+    return { currency, defaultBuyIn, settlementMode };
   };
 
   const saveGameSettings = async () => {

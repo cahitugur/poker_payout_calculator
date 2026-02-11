@@ -21,6 +21,7 @@ function initPayoutCalculator() {
 
   let revolutCurrency = 'EUR';
   let defaultBuyIn = '30';
+  let settlementMode = 'banker';
 
   const rowsTbody = document.getElementById('rows');
   const addRowBtn = document.getElementById('addRowBtn');
@@ -68,6 +69,56 @@ function initPayoutCalculator() {
     if (!slug) return '';
     const cents = Math.round(amount * 100);
     return `${REVOLUT_BASE_URL}/${encodeURIComponent(slug)}?currency=${revolutCurrency}&amount=${cents}`;
+  };
+
+  /**
+   * Greedy algorithm to minimise the number of transactions.
+   * At each step, picks the largest remaining debtor and the largest remaining
+   * creditor, transfers the minimum of their balances, and removes whichever
+   * is fully settled. Re-sorts after every transfer so the next match is
+   * always between the two biggest outstanding balances.
+   *
+   * @param {{ name: string, amount: number }[]} balances
+   *   amount > 0 = creditor (won money), amount < 0 = debtor (lost money)
+   * @returns {{ from: string, to: string, amount: number }[]}
+   */
+  const computeGreedyTransactions = (balances) => {
+    const creditors = balances
+      .filter(b => b.amount > 0.005)
+      .map(b => ({ ...b }));
+
+    const debtors = balances
+      .filter(b => b.amount < -0.005)
+      .map(b => ({ name: b.name, amount: Math.abs(b.amount) }));
+
+    const transactions = [];
+
+    while (creditors.length > 0 && debtors.length > 0) {
+      // Always pick the largest creditor and largest debtor
+      creditors.sort((a, b) => b.amount - a.amount);
+      debtors.sort((a, b) => b.amount - a.amount);
+
+      const c = creditors[0];
+      const d = debtors[0];
+      const transfer = Math.min(c.amount, d.amount);
+
+      if (transfer > 0.005) {
+        transactions.push({
+          from: d.name,
+          to: c.name,
+          amount: Math.round(transfer * 100) / 100
+        });
+      }
+
+      c.amount -= transfer;
+      d.amount -= transfer;
+
+      if (c.amount < 0.005) creditors.shift();
+      if (d.amount < 0.005) debtors.shift();
+    }
+
+    transactions.sort((a, b) => a.from.localeCompare(b.from, undefined, { sensitivity: 'base' }));
+    return transactions;
   };
 
   const promptForRevtag = (label, fallback = '@') => {
@@ -516,6 +567,7 @@ function initPayoutCalculator() {
   function applyGameSettings(gs, { live = false } = {}) {
     if (!gs) return;
     if (gs.currency) revolutCurrency = gs.currency;
+    if (gs.settlementMode) settlementMode = gs.settlementMode;
     if (gs.defaultBuyIn) {
       defaultBuyIn = gs.defaultBuyIn;
       if (buyInInput && !tableLocked) {
@@ -536,6 +588,9 @@ function initPayoutCalculator() {
 
   window.addEventListener('game-settings-updated', (e) => {
     applyGameSettings(e.detail?.gameSettings, { live: true });
+    if (checkboxesVisible && paymentSummary && !paymentSummary.classList.contains('is-hidden')) {
+      renderPaymentSummary();
+    }
   });
 
   loadSharedDataFromUrl().then((dataLoaded) => {
@@ -790,6 +845,8 @@ function initPayoutCalculator() {
   };
 
   const renderPaymentSummary = async () => {
+    const receiveCol = paymentSummary.querySelector('[data-payment="receive"]')?.parentElement;
+    const payCol = paymentSummary.querySelector('[data-payment="pay"]')?.parentElement;
     const receiveList = paymentSummary.querySelector('[data-payment="receive"]');
     const payList = paymentSummary.querySelector('[data-payment="pay"]');
     if (!receiveList || !payList) return;
@@ -827,12 +884,12 @@ function initPayoutCalculator() {
       return '';
     };
 
-    const addRow = (container, name, amount, link) => {
+    const addRowToList = (container, label, amount, link) => {
       const row = document.createElement('div');
       row.className = 'payment-row';
       const nameEl = document.createElement('span');
       nameEl.className = 'payment-name';
-      nameEl.textContent = name;
+      nameEl.textContent = label;
       const amountEl = document.createElement('span');
       amountEl.className = 'payment-amount';
       amountEl.textContent = `${fmt(amount)} ${revolutCurrency}`;
@@ -850,28 +907,66 @@ function initPayoutCalculator() {
       container.appendChild(row);
     };
 
-    for (const tr of rowsTbody.children) {
-      const name = tr._refs?.name?.value?.trim();
-      if (!name) continue;
-      const payout = parseNum(tr._refs?.out?.value) - parseNum(tr._refs?.in?.value);
-      if (Math.abs(payout) < 0.005) continue;
-
-      if (payout > 0) {
-        const revtag = getSuspectRevtag(name);
-        const link = buildRevolutLink(revtag, payout);
-        addRow(receiveList, name, payout, link);
-      } else {
-        const revtag = ensureProfileRevtag();
-        const link = buildRevolutLink(revtag, Math.abs(payout));
-        addRow(payList, name, Math.abs(payout), link);
+    if (settlementMode === 'greedy') {
+      /* ── Peer-to-peer (greedy) mode ── */
+      if (receiveCol) receiveCol.style.display = 'none';
+      if (payCol) {
+        payCol.style.display = '';
+        const h3 = payCol.querySelector('h3');
+        if (h3) h3.textContent = 'Transactions';
       }
-    }
 
-    if (!receiveList.children.length) {
-      receiveList.innerHTML = '<span class="muted-text">No players</span>';
-    }
-    if (!payList.children.length) {
-      payList.innerHTML = '<span class="muted-text">No players</span>';
+      const balances = [];
+      for (const tr of rowsTbody.children) {
+        const name = tr._refs?.name?.value?.trim();
+        if (!name) continue;
+        const amount = parseNum(tr._refs?.out?.value) - parseNum(tr._refs?.in?.value);
+        if (Math.abs(amount) >= 0.005) balances.push({ name, amount });
+      }
+
+      const txns = computeGreedyTransactions(balances);
+
+      for (const txn of txns) {
+        const revtag = getSuspectRevtag(txn.to);
+        const link = buildRevolutLink(revtag, txn.amount);
+        addRowToList(payList, `${txn.from} → ${txn.to}`, txn.amount, link);
+      }
+
+      if (!payList.children.length) {
+        payList.innerHTML = '<span class="muted-text">No transactions needed</span>';
+      }
+    } else {
+      /* ── Banker mode (default) ── */
+      if (receiveCol) receiveCol.style.display = '';
+      if (payCol) {
+        payCol.style.display = '';
+        const h3 = payCol.querySelector('h3');
+        if (h3) h3.textContent = 'Players To Pay';
+      }
+
+      for (const tr of rowsTbody.children) {
+        const name = tr._refs?.name?.value?.trim();
+        if (!name) continue;
+        const payout = parseNum(tr._refs?.out?.value) - parseNum(tr._refs?.in?.value);
+        if (Math.abs(payout) < 0.005) continue;
+
+        if (payout > 0) {
+          const revtag = getSuspectRevtag(name);
+          const link = buildRevolutLink(revtag, payout);
+          addRowToList(receiveList, name, payout, link);
+        } else {
+          const revtag = ensureProfileRevtag();
+          const link = buildRevolutLink(revtag, Math.abs(payout));
+          addRowToList(payList, name, Math.abs(payout), link);
+        }
+      }
+
+      if (!receiveList.children.length) {
+        receiveList.innerHTML = '<span class="muted-text">No players</span>';
+      }
+      if (!payList.children.length) {
+        payList.innerHTML = '<span class="muted-text">No players</span>';
+      }
     }
 
     if (settingsChanged) {
@@ -884,28 +979,60 @@ function initPayoutCalculator() {
     let settingsChanged = false;
     let profileRevtag = normalizeRevtag(settingsData.profile?.revtag);
 
-    if (!profileRevtag) {
-      profileRevtag = promptForRevtag('Enter your profile revtag', '@');
-      if (profileRevtag) {
-        settingsData.profile.revtag = profileRevtag;
-        settingsChanged = true;
+    const ensureProfileRevtag = () => {
+      if (!profileRevtag) {
+        profileRevtag = promptForRevtag('Enter your profile revtag', '@');
+        if (profileRevtag) {
+          settingsData.profile.revtag = profileRevtag;
+          settingsChanged = true;
+        }
       }
-    }
+      return profileRevtag;
+    };
+
+    const getSuspectRevtag = (name) => {
+      const entry = settingsData.usualSuspects.find((item) => (item.name || '').toLowerCase() === name.toLowerCase());
+      if (entry && normalizeRevtag(entry.revtag)) return entry.revtag;
+      return '';
+    };
 
     const lines = [];
-    for (const tr of rowsTbody.children) {
-      const name = tr._refs?.name?.value?.trim();
-      if (!name) continue;
-      const inVal = parseNum(tr._refs?.in?.value);
-      const outVal = parseNum(tr._refs?.out?.value);
-      const payout = outVal - inVal;
-      if (payout >= -0.005) continue;
 
-      const absAmount = Math.abs(payout);
-      const payoutLabel = fmt(payout);
-      const link = buildRevolutLink(profileRevtag, absAmount);
-      const suffix = link ? ` - ${link}` : '';
-      lines.push(`${name}: ${payoutLabel} ${revolutCurrency}${suffix}`);
+    if (settlementMode === 'greedy') {
+      /* ── Peer-to-peer (greedy) mode ── */
+      const balances = [];
+      for (const tr of rowsTbody.children) {
+        const name = tr._refs?.name?.value?.trim();
+        if (!name) continue;
+        const amount = parseNum(tr._refs?.out?.value) - parseNum(tr._refs?.in?.value);
+        if (Math.abs(amount) >= 0.005) balances.push({ name, amount });
+      }
+
+      const txns = computeGreedyTransactions(balances);
+      for (const txn of txns) {
+        const revtag = getSuspectRevtag(txn.to);
+        const link = buildRevolutLink(revtag, txn.amount);
+        const suffix = link ? ` - ${link}` : '';
+        lines.push(`${txn.from} → ${txn.to}: ${fmt(txn.amount)} ${revolutCurrency}${suffix}`);
+      }
+    } else {
+      /* ── Banker mode (default) ── */
+      ensureProfileRevtag();
+
+      for (const tr of rowsTbody.children) {
+        const name = tr._refs?.name?.value?.trim();
+        if (!name) continue;
+        const inVal = parseNum(tr._refs?.in?.value);
+        const outVal = parseNum(tr._refs?.out?.value);
+        const payout = outVal - inVal;
+        if (payout >= -0.005) continue;
+
+        const absAmount = Math.abs(payout);
+        const payoutLabel = fmt(payout);
+        const link = buildRevolutLink(profileRevtag, absAmount);
+        const suffix = link ? ` - ${link}` : '';
+        lines.push(`${name}: ${payoutLabel} ${revolutCurrency}${suffix}`);
+      }
     }
 
     if (settingsChanged) {

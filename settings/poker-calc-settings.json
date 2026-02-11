@@ -22,7 +22,7 @@
     },
     {
       "name": "Dillon",
-      "revtag": ""
+      "revtag": "@dillon"
     },
     {
       "name": "Euan",
@@ -42,15 +42,15 @@
     },
     {
       "name": "James",
-      "revtag": ""
+      "revtag": "@james"
     },
     {
       "name": "Kevin",
-      "revtag": ""
+      "revtag": "@kevin"
     },
     {
       "name": "Kunal",
-      "revtag": ""
+      "revtag": "@kunal"
     },
     {
       "name": "Lauren",
@@ -58,7 +58,7 @@
     },
     {
       "name": "Liam",
-      "revtag": ""
+      "revtag": "@liam"
     },
     {
       "name": "Luke",
@@ -82,7 +82,7 @@
     },
     {
       "name": "Patryk",
-      "revtag": ""
+      "revtag": "@patryk"
     },
     {
       "name": "Pawel",
@@ -90,7 +90,7 @@
     },
     {
       "name": "Scott",
-      "revtag": ""
+      "revtag": "@scott"
     },
     {
       "name": "Tuhin",
@@ -99,6 +99,7 @@
   ],
   "gameSettings": {
     "currency": "EUR",
-    "defaultBuyIn": "30"
+    "defaultBuyIn": "30",
+    "settlementMode": "greedy"
   }
 }
