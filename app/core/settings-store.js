@@ -213,7 +213,10 @@ export const normalizeSettingsData = (data, defaultSuspects = []) => {
   const rawCurrency = (data?.gameSettings?.currency ?? 'EUR').trim();
   const currency = KNOWN_CURRENCIES.includes(rawCurrency) ? rawCurrency : rawCurrency || 'EUR';
   const defaultBuyIn = data?.gameSettings?.defaultBuyIn ?? '30';
-  const gameSettings = { currency, defaultBuyIn: String(defaultBuyIn) };
+  const VALID_SETTLEMENT_MODES = ['banker', 'greedy'];
+  const rawMode = (data?.gameSettings?.settlementMode ?? 'banker').trim();
+  const settlementMode = VALID_SETTLEMENT_MODES.includes(rawMode) ? rawMode : 'banker';
+  const gameSettings = { currency, defaultBuyIn: String(defaultBuyIn), settlementMode };
 
   return { profile, usualSuspects, gameSettings };
 };

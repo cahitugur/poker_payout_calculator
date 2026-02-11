@@ -129,7 +129,7 @@
           </button>
           <button id="gameSettingsBtn" class="settings-item-btn" type="button">
             <span>Game Defaults</span>
-            <span class="settings-item-meta">Currency and Buy-in</span>
+            <span class="settings-item-meta">Currency, Buy-in, Settlement</span>
           </button>
         </div>
         <div class="settings-actions settings-actions-split">
@@ -250,6 +250,13 @@
           <label class="settings-field">
             <span class="settings-label">Buy-In</span>
             <input id="defaultBuyInInput" class="input-field" type="text" inputmode="numeric" placeholder="e.g. 30" />
+          </label>
+          <label class="settings-field">
+            <span class="settings-label">Settlement Mode</span>
+            <select id="settlementModeSelect" class="select-field">
+              <option value="banker">Banker (collect &amp; distribute)</option>
+              <option value="greedy">Peer-to-peer (fewer transactions)</option>
+            </select>
           </label>
         </div>
         <div class="settings-actions">
