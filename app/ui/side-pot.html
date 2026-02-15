@@ -279,12 +279,26 @@
   </div>
 
   <script>
-    window.addEventListener('load', () => {
+    (() => {
       const splash = document.getElementById('splashScreen');
       if (!splash) return;
-      splash.classList.add('is-hidden');
-      window.setTimeout(() => splash.remove(), 320);
-    });
+      const minDurationMs = 1500;
+      const startedAt = performance.now();
+      const hideSplash = () => {
+        splash.classList.add('is-hidden');
+        window.setTimeout(() => splash.remove(), 350);
+      };
+      const scheduleHide = () => {
+        const elapsed = performance.now() - startedAt;
+        const wait = Math.max(0, minDurationMs - elapsed);
+        window.setTimeout(hideSplash, wait);
+      };
+      window.addEventListener('load', () => {
+        window.requestAnimationFrame(() =>
+          window.requestAnimationFrame(scheduleHide)
+        );
+      });
+    })();
   </script>
   <script type="module" src="../core/sidepot_calc.js"></script>
 </body>
