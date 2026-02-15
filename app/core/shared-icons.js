@@ -17,7 +17,7 @@ export function initSharedIcons() {
     c.width = c.height = size;
     const ctx = c.getContext('2d');
 
-    ctx.fillStyle = '#0b0b20';
+    ctx.fillStyle = '#09090b';
     const r = size * 0.18;
     const w = size;
     const h = size;
@@ -30,7 +30,7 @@ export function initSharedIcons() {
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = '#16b981';
+    ctx.fillStyle = '#d4a832';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.font = `${Math.floor(size * 0.7)}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;

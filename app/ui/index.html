@@ -8,13 +8,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Poker Payout Calculator</title>
-  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" ry="12" fill="%230b1020"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="44" font-family="system-ui,Segoe UI,Roboto,Helvetica,Arial" fill="%2310b981">♠</text></svg>'/>
-  <meta name="theme-color" content="#0b1020" />
+  <link rel="icon" type="image/png" href="../icons/icon1.png" />
+  <link rel="apple-touch-icon" href="../icons/icon1.png" />
+  <meta name="theme-color" content="#09090b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="page page-payout" data-app="payout">
+  <div class="splash-screen" id="splashScreen" aria-hidden="true">
+    <img src="../icons/splash_screen.png" alt="Chip Happens" />
+  </div>
   <div class="wrap">
     <h1 class="page-title">Poker Payout Calculator</h1>
     <div class="card">
@@ -32,7 +37,7 @@
         <span class="toolbar-icon" aria-hidden="true" title="Poker">
           <svg width="22" height="22" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
             <title>Spade</title>
-            <path fill="#10b981" d="M32 6C20 18 8 26 8 36c0 6 5 11 11 11 4 0 8-2 10-5-1 5-3 9-8 12h22c-5-3-7-7-8-12 2 3 6 5 10 5 6 0 11-5 11-11 0-10-12-18-24-30z"/>
+            <path fill="#d4a832" d="M32 6C20 18 8 26 8 36c0 6 5 11 11 11 4 0 8-2 10-5-1 5-3 9-8 12h22c-5-3-7-7-8-12 2 3 6 5 10 5 6 0 11-5 11-11 0-10-12-18-24-30z"/>
           </svg>
         </span>
         <div id="balanceStatus" class="status warn" aria-live="polite">
@@ -266,6 +271,14 @@
     </div>
   </div>
 
+  <script>
+    window.addEventListener('load', () => {
+      const splash = document.getElementById('splashScreen');
+      if (!splash) return;
+      splash.classList.add('is-hidden');
+      window.setTimeout(() => splash.remove(), 320);
+    });
+  </script>
   <script type="module" src="../core/payout_calc.js"></script>
 </body>
 </html>
