@@ -18,9 +18,6 @@
   <link rel="manifest" href="manifest.webmanifest" />
 </head>
 <body class="page page-sidepot" data-app="sidepot">
-  <div class="splash-screen" id="splashScreen" aria-hidden="true">
-    <img src="../icons/splash_screen.png" alt="Chip Happens" />
-  </div>
   <div class="wrap">
     <h1 class="page-title">Side Pot Calculator</h1>
     <div class="card">
@@ -279,28 +276,6 @@
     </div>
   </div>
 
-  <script>
-    (() => {
-      const splash = document.getElementById('splashScreen');
-      if (!splash) return;
-      const minDurationMs = 2000;
-      const startedAt = performance.now();
-      const hideSplash = () => {
-        splash.classList.add('is-hidden');
-        window.setTimeout(() => splash.remove(), 350);
-      };
-      const scheduleHide = () => {
-        const elapsed = performance.now() - startedAt;
-        const wait = Math.max(0, minDurationMs - elapsed);
-        window.setTimeout(hideSplash, wait);
-      };
-      window.addEventListener('load', () => {
-        window.requestAnimationFrame(() =>
-          window.requestAnimationFrame(scheduleHide)
-        );
-      });
-    })();
-  </script>
   <script type="module" src="../core/sidepot_calc.js"></script>
   <script>
     if ('serviceWorker' in navigator) {

@@ -16,7 +16,6 @@ const PRECACHE_ASSETS = [
   "../core/settings.js",
   "../core/settings-store.js",
   "../icons/app_icon.png",
-  "../icons/splash_screen.png",
 ];
 
 // ── Install: pre-cache all static assets ──────────────────────────────────────
