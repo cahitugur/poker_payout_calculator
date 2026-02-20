@@ -1,22 +1,22 @@
 // Poker Payout Calculator — Service Worker
 // Cache-first for static assets, network-first for HTML pages.
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `poker-calc-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
-  "/ui/index.html",
-  "/ui/side-pot.html",
-  "/ui/styles.css",
-  "/ui/manifest.webmanifest",
-  "/core/payout_calc.js",
-  "/core/sidepot_calc.js",
-  "/core/shared-icons.js",
-  "/core/shared-data.js",
-  "/core/settings.js",
-  "/core/settings-store.js",
-  "/icons/app_icon.png",
-  "/icons/splash_screen.png",
+  "./index.html",
+  "./side-pot.html",
+  "./styles.css",
+  "./manifest.webmanifest",
+  "../core/payout_calc.js",
+  "../core/sidepot_calc.js",
+  "../core/shared-icons.js",
+  "../core/shared-data.js",
+  "../core/settings.js",
+  "../core/settings-store.js",
+  "../icons/app_icon.png",
+  "../icons/splash_screen.png",
 ];
 
 // ── Install: pre-cache all static assets ──────────────────────────────────────
