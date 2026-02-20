@@ -15,8 +15,7 @@ const PRECACHE_ASSETS = [
   "/core/shared-data.js",
   "/core/settings.js",
   "/core/settings-store.js",
-  "/icons/icon1.png",
-  "/icons/icon_2.png",
+  "/icons/app_icon.png",
   "/icons/splash_screen.png",
 ];
 
