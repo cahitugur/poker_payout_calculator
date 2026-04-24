@@ -10,7 +10,7 @@ This folder contains the refactored, future-proof app structure for Capacitor.
 
 ## Open the UI
 
-Open `ui/index.html` for the payout calculator, and navigate to the Side Pot calculator via the menu or directly at `ui/side-pot.html`.
+Open `ui/index.html` for the default landing page (new app link, PWA install notes, legacy links). The legacy payout calculator is at `ui/payout.html`; Side Pot is at `ui/side-pot.html` (also linked from the menu on those pages).
 
 ## Notes
 
